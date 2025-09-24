@@ -1,0 +1,69 @@
+type Product {
+    id: ID!
+    title: String
+    desc: String
+    price: Float
+    quantity: Int
+    user: User
+}
+
+type Category {
+    id: ID!
+    name: String
+    images: String
+}
+
+type User {
+    id: ID!
+    fullname: String
+    email: String
+    phone: String
+    category: Category
+}
+
+type Query {
+    # Product
+    allProductsSorted: [Product]
+    allProducts: [Product]
+    productsByCategory(categoryId: ID!): [Product]
+
+    # User
+    allUsers: [User]
+    userById(id: ID!): User
+
+    # Category
+    allCategories: [Category]
+    categoryById(id: ID!): Category
+}
+
+type Mutation {
+    # User
+    createUser(fullname: String!, email: String!, phone: String!): User
+    updateUser(id: ID!, fullname: String, email: String, phone: String, categoryId: ID): User
+    deleteUser(id: ID!): Boolean
+
+    # Category
+    createCategory(name: String!, images: String): Category
+    updateCategory(id: ID!, name: String, images: String): Category
+    deleteCategory(id: ID!): Boolean
+
+    # Product
+    createProduct(
+        title: String!,
+        desc: String,
+        price: Float!,
+        quantity: Int!,
+        userId: ID!
+    ): Product
+
+    updateProduct(
+        id: ID!,
+        title: String,
+        desc: String,
+        price: Float,
+        quantity: Int,
+        userId: ID
+    ): Product
+
+    deleteProduct(id: ID!): Boolean
+}
