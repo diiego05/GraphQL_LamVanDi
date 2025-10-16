@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: alotra-website
   datasource:
     url: jdbc:sqlserver://localhost:1433;databaseName=AloTra;encrypt=true;trustServerCertificate=true;integratedSecurity=true
     username: 
