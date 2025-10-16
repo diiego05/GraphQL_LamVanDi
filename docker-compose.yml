@@ -21,8 +21,8 @@ services:
 
   app:
     build:
-      context: ./AloTraWebsite  # ← Build từ AloTraWebsite folder
-      dockerfile: ../Dockerfile # ← Dockerfile ở parent folder
+      context: .  # ← Build từ AloTraWebsite folder
+      dockerfile: Dockerfile # ← Dockerfile ở parent folder
     ports:
       - "8080:8080"
     environment:
