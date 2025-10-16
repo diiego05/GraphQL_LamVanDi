@@ -3,11 +3,8 @@ FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
-# Copy pom.xml (cùng level với Dockerfile)
-COPY pom.xml .
-
-# Copy source code (cùng level với Dockerfile)
-COPY src ./src
+# Copy toàn bộ AloTraWebsite folder
+COPY AloTraWebsite/ .
 
 # Build JAR
 RUN mvn clean package -DskipTests -q
@@ -20,8 +17,6 @@ WORKDIR /app
 # Copy JAR từ build stage
 COPY --from=build /build/target/*.jar app.jar
 
-# Expose port
 EXPOSE 8080
 
-# Run
 ENTRYPOINT ["java", "-jar", "app.jar"]
