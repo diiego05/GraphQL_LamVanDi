@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: alotra-website
+  
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=AloTra;encrypt=true;trustServerCertificate=true
+    username: # ← Để trống cho Windows Auth
+    password: # ← Để trống cho Windows Auth
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.SQLServerDialect
+        format_sql: true
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  mvc:
+    static-path-pattern: /static/**
+
+server:
+  port: 8080
+  servlet:
+    context-path: /alotra-website
+
+logging:
+  level:
+    root: INFO
+    com.alotra: DEBUG
