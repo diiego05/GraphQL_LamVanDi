@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/auth_layout :: body(pageTitle='Đăng Nhập', content=~{::content}, additionalJs=~{::additionalJs})}">
+<body>
+
+<th:block th:fragment="content">
+    <div class="card auth-card">
+        <div class="card-body">
+            <h3 class="card-title text-center mb-4">Đăng nhập tài khoản</h3>
+
+            <!-- Container hiển thị alert -->
+            <div id="alert-container"></div>
+
+            <!-- Form đăng nhập -->
+            <form id="loginForm" class="auth-form">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Email*</label>
+                    <input type="email" class="form-control" id="username" required>
+                </div>
+
+                <div class="mb-3 position-relative">
+                    <label for="password" class="form-label">Mật khẩu*</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="password" required>
+                        <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">Nhớ mật khẩu</label>
+                    </div>
+                    <a th:href="@{/forgot-password}" class="auth-link small">Quên mật khẩu?</a>
+                </div>
+
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-auth-primary btn-lg">Đăng nhập</button>
+                </div>
+            </form>
+
+            <div class="text-center mt-3">
+                <small>Chưa có tài khoản?
+                    <a th:href="@{/register}" class="auth-link">Đăng ký ngay</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</th:block>
+
+<th:block th:fragment="additionalJs">
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    // === Context path động ===
+    const contextPath = window.location.pathname.split("/")[1] ? "/" + window.location.pathname.split("/")[1] : "";
+
+    // === Toggle mật khẩu ===
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordInput = document.getElementById("password");
+    togglePassword.addEventListener("click", () => {
+        const type = passwordInput.type === "password" ? "text" : "password";
+        passwordInput.type = type;
+        togglePassword.querySelector("i").classList.toggle("fa-eye");
+        togglePassword.querySelector("i").classList.toggle("fa-eye-slash");
+    });
+
+    // === Hàm hiển thị alert (Bootstrap) ===
+    function showAlert(message, type = "danger") {
+        const container = document.getElementById("alert-container");
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // === Kiểm tra lỗi từ query string (ví dụ ?error=unauthorized) ===
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get("error");
+    if (errorParam) {
+        let msg = "";
+        if (errorParam === "unauthorized") msg = "Vui lòng đăng nhập để tiếp tục truy cập trang này.";
+        else if (errorParam === "forbidden") msg = "Bạn không có quyền truy cập trang này.";
+        else msg = "Đã xảy ra lỗi. Vui lòng thử lại.";
+        showAlert(msg, "warning");
+    }
+
+    // === Ghi nhớ email nếu có ===
+    const savedEmail = localStorage.getItem("rememberEmail");
+    if (savedEmail) {
+        document.getElementById("username").value = savedEmail;
+        document.getElementById("rememberMe").checked = true;
+    }
+
+    // === Xử lý submit form ===
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        try {
+            const res = await fetch(`${contextPath}/api/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.token) {
+                localStorage.setItem("jwtToken", data.token);
+
+                // Lưu email nếu chọn "Nhớ mật khẩu"
+                if (document.getElementById("rememberMe").checked)
+                    localStorage.setItem("rememberEmail", email);
+                else
+                    localStorage.removeItem("rememberEmail");
+
+                // Thông báo thành công
+                showAlert("Đăng nhập thành công! Đang chuyển hướng...", "success");
+
+                // Chuyển hướng theo role
+                const role = (data.role || "").toUpperCase();
+                setTimeout(() => {
+                    if (role === "ADMIN") window.location.href = contextPath + "/admin/dashboard";
+                    else if (role === "VENDOR") window.location.href = contextPath + "/vendor/dashboard";
+                    else if (role === "SHIPPER") window.location.href = contextPath + "/shipper/dashboard";
+                    else window.location.href = contextPath + "/";
+                }, 1000);
+            } else {
+                showAlert(data.error || "Sai email hoặc mật khẩu!");
+            }
+        } catch (err) {
+            showAlert("Không thể kết nối đến máy chủ!");
+        }
+    });
+});
+</script>
+</th:block>
+
+</body>
+</html>
