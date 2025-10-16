@@ -79,6 +79,7 @@ public class User implements UserDetails {
     @Column(name = "LockoutEnd")
     private LocalDateTime lockoutEnd;
 
+
     // --- Lifecycle ---
     @PrePersist
     protected void onCreate() {
@@ -148,4 +149,7 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return "ACTIVE".equalsIgnoreCase(this.status);
     }
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ChatRoom chatRoom;
 }
