@@ -1,11 +1,12 @@
+# Build stage
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 
 WORKDIR /build
 
-# Copy pom.xml
+# Copy pom.xml (cùng level với Dockerfile)
 COPY pom.xml .
 
-# Copy source code
+# Copy source code (cùng level với Dockerfile)
 COPY src ./src
 
 # Build JAR
