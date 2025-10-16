@@ -1,16 +1,15 @@
-# Build stage
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 
-WORKDIR /app
+WORKDIR /build
 
-# Copy pom.xml từ AloTraWebsite
-COPY AloTraWebsite/pom.xml .
+# Copy pom.xml
+COPY pom.xml .
 
-# Copy source code từ AloTraWebsite
-COPY AloTraWebsite/src ./src
+# Copy source code
+COPY src ./src
 
-# Build application
-RUN mvn clean package -DskipTests
+# Build JAR
+RUN mvn clean package -DskipTests -q
 
 # Runtime stage
 FROM eclipse-temurin:21-jdk-alpine
@@ -18,10 +17,10 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
 # Copy JAR từ build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /build/target/*.jar app.jar
 
 # Expose port
 EXPOSE 8080
 
-# Run application
+# Run
 ENTRYPOINT ["java", "-jar", "app.jar"]
