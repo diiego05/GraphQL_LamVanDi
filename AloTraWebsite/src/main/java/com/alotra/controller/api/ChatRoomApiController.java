@@ -14,6 +14,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/chat")
 @RequiredArgsConstructor
+
 public class ChatRoomApiController {
 
     private final ChatService chatService;
@@ -43,9 +44,24 @@ public class ChatRoomApiController {
      * GET /api/chat/user/{userId}
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<ChatRoomDTO> getOrCreateUserRoom(@PathVariable Long userId) {
-        ChatRoomDTO room = chatService.getOrCreateUserRoom(userId);
-        return ResponseEntity.ok(room);
+    public ResponseEntity<?> getOrCreateUserRoom(@PathVariable Long userId) {
+        try {
+            System.out.println("🔍 [DEBUG] Getting chat room for userId: " + userId);
+            ChatRoomDTO room = chatService.getOrCreateUserRoom(userId);
+            System.out.println("✅ [DEBUG] Found/Created room: " + room.getId());
+            return ResponseEntity.ok(room);
+        } catch (Exception e) {
+            System.out.println("❌ [DEBUG] Exception: " + e.getMessage());
+            e.printStackTrace();
+
+            // Trả về error response thay vì throw
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            error.put("userId", userId);
+            error.put("timestamp", java.time.LocalDateTime.now());
+
+            return ResponseEntity.status(400).body(error);
+        }
     }
 
     /**

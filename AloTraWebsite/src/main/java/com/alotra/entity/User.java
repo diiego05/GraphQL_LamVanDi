@@ -8,6 +8,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.alotra.validator.StrongPassword;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -32,6 +34,8 @@ public class User implements UserDetails {
     @Column(name = "Phone", unique = true)
     private String phone;
 
+    @NotBlank(message = "Mật khẩu không được để trống")
+    @StrongPassword
     @Column(name = "PasswordHash", nullable = false)
     private String passwordHash;
 

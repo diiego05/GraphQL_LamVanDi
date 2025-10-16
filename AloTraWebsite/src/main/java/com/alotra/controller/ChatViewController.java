@@ -12,9 +12,9 @@ public class ChatViewController {
      * Trang chat cho customer
      * GET /chat/customer
      */
-    @GetMapping("chat/customer-chat")
+    @GetMapping("/customer")
     public String customerChat() {
-        return "customer-chat";
+        return "admin/customer-chat";
     }
 
     /**
@@ -23,6 +23,6 @@ public class ChatViewController {
      */
     @GetMapping("/admin")
     public String adminDashboard() {
-        return "chat/admin-chat-dashboard";
+        return "admin/admin-chat-dashboard";
     }
 }

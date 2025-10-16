@@ -1,6 +1,7 @@
 package com.alotra.config;
 
 
+
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
@@ -15,14 +16,14 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // Cấu hình message broker
         config.enableSimpleBroker("/topic", "/queue");
-        config.setApplicationDestinationPrefixes("/app");
+        config.setApplicationDestinationPrefixes("/app");  // ← FIX: Thay thành "/app"
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Đăng ký WebSocket endpoint
         registry.addEndpoint("/ws/chat")
-                .setAllowedOrigins("*")
+                .setAllowedOriginPatterns("*")  // ← FIX: Thay "*" thành allowedOriginPatterns
                 .withSockJS();
     }
 }
