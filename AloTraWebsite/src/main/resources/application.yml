@@ -1,17 +1,16 @@
 spring:
-  application:
-    name: alotra-website
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=AloTra;encrypt=true;trustServerCertificate=true;integratedSecurity=true
-    username: 
-    password: 
-    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+    url: jdbc:mysql://localhost:3306/alotra?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Ho_Chi_Minh
+    username: root
+    password: Di0988800705@
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: none
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.SQLServerDialect
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
 server:
   port: 8080

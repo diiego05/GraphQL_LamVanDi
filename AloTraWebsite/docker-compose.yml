@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Database - MySQL
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_alotra
+    environment:
+      MYSQL_ROOT_PASSWORD: Di0988800705@
+      MYSQL_DATABASE: alotra
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Di0988800705@
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - alotra-network
+
+  # Spring Boot Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alotra_app
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: alotra
+      MYSQL_USER: root
+      MYSQL_PASSWORD: Di0988800705@
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - alotra-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  alotra-network:
+    driver: bridge
