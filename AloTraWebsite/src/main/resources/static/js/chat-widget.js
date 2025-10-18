@@ -10,17 +10,24 @@ const ChatWidget = {
   menuListenersAdded: false, // ✅ THÊM: Track đã gắn event chưa
 
   init() {
-    if (!this.isLoggedIn()) {
-      console.log('⚠️ User not logged in - Chat disabled');
-      return;
-    }
+     const isLoggedIn = this.isLoggedIn();
 
-    this.setupEventListeners();
-	this.createQuickMenu();
-    this.setupQuickMenuListeners(); // ✅ GẮN EVENT NGAY LÚC INIT
-    this.showChatButton();
-    console.log('✅ ChatWidget initialized');
-  },
+     if (!isLoggedIn) {
+       console.log('⚠️ User not logged in - Chat will show login toast');
+     }
+
+     // ✅ LUÔN SETUP EVENT LISTENER
+     this.setupEventListeners();
+
+     // ✅ CHỈ TẠO MENU KHI ĐÃ ĐĂNG NHẬP
+     if (isLoggedIn) {
+       this.createQuickMenu();
+       this.setupQuickMenuListeners();
+     }
+
+     this.showChatButton();
+     console.log('✅ ChatWidget initialized');
+   },
   createQuickMenu() {
     const modal = document.getElementById('chatModal');
     if (!modal) {
@@ -112,10 +119,15 @@ const ChatWidget = {
     console.log('✅ Menu toggle setup');
   },
   isLoggedIn() {
-    const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
-    const userIdAttr = document.body.getAttribute('data-user-id');
-    return !!(token && userIdAttr && userIdAttr !== 'null');
-  },
+     const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
+     const userIdAttr = document.body.getAttribute('data-user-id');
+
+     // ✅ KIỂM TRA KỸ HƠN
+     const hasToken = token && token !== 'null' && token !== '';
+     const hasUserId = userIdAttr && userIdAttr !== 'null' && userIdAttr !== '' && userIdAttr !== '0';
+
+     return hasToken && hasUserId;
+   },
 
   showChatButton() {
     const btn = document.getElementById('chatFloatingBtn');
@@ -128,12 +140,22 @@ const ChatWidget = {
   },
 
   getUserId() {
-    const attr = document.body.getAttribute('data-user-id');
-    if (attr && attr !== 'null') {
-      return parseInt(attr, 10);
-    }
-    return null;
-  },
+      const attr = document.body.getAttribute('data-user-id');
+
+      // ✅ KIỂM TRA KỸ HƠN - KHÔNG DÙNG FALLBACK = 1
+      if (!attr || attr === 'null' || attr === '' || attr === '0') {
+        return null;
+      }
+
+      const userId = parseInt(attr, 10);
+
+      // ✅ KIỂM TRA NaN
+      if (isNaN(userId) || userId <= 0) {
+        return null;
+      }
+
+      return userId;
+    },
 
   setupEventListeners() {
     const floatingBtn   = document.getElementById('chatFloatingBtn');
@@ -198,29 +220,46 @@ const ChatWidget = {
     }
   },
   showLoginRequiredToast() {
-    // Xóa toast cũ nếu có
-    const oldToast = document.getElementById('chatLoginToast');
-    if (oldToast) oldToast.remove();
+      console.log('🔵 showLoginRequiredToast called');
 
-    // Tạo toast mới
-    const toastHTML = `
-      <div id="chatLoginToast" class="chat-login-toast">
-        <i class="fas fa-exclamation-triangle"></i>
-        <span>Vui lòng đăng nhập để sử dụng chat.</span>
-      </div>
-    `;
+      const oldToast = document.getElementById('chatLoginToast');
+      if (oldToast) oldToast.remove();
 
-    document.body.insertAdjacentHTML('beforeend', toastHTML);
+      const toastHTML = `
+        <div id="chatLoginToast" style="
+          position: fixed;
+          bottom: 30px;
+          right: 110px;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          color: white;
+          padding: 14px 20px;
+          border-radius: 12px;
+          box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 14px;
+          font-weight: 500;
+          z-index: 99999;
+          max-width: 320px;
+        ">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Vui lòng đăng nhập để sử dụng chat.</span>
+        </div>
+      `;
 
-    // Tự động ẩn sau 3 giây
-    setTimeout(() => {
-      const toast = document.getElementById('chatLoginToast');
-      if (toast) {
-        toast.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-      }
-    }, 3000);
-  },
+      document.body.insertAdjacentHTML('beforeend', toastHTML);
+      console.log('✅ Toast added to DOM');
+
+      setTimeout(() => {
+        const toast = document.getElementById('chatLoginToast');
+        if (toast) {
+          toast.style.animation = 'slideOut 0.3s ease';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 3000);
+    },
+
   async loadChatData() {
     if (!this.userId) return;
 
