@@ -4,8 +4,7 @@
 <!-- 🌟 Định nghĩa FRAGMENT "body" -->
 <body th:fragment="body(content, additionalJs)"
       class="d-flex flex-column h-100"
-      th:data-user-id="${#authentication?.principal?.id ?: ''}">
-
+      th:data-user-id="${currentUserId != null ? currentUserId : ''}">
 <head>
     <meta charset="UTF-8">
     <title th:text="${pageTitle}">AloTra</title>

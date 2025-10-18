@@ -10,24 +10,43 @@ const ChatWidget = {
   menuListenersAdded: false, // ✅ THÊM: Track đã gắn event chưa
 
   init() {
-     const isLoggedIn = this.isLoggedIn();
+    // ✅ KIỂM TRA ĐĂNG NHẬP
+	console.log('🔵 ChatWidget.init() called');
 
-     if (!isLoggedIn) {
-       console.log('⚠️ User not logged in - Chat will show login toast');
-     }
+	  this.userId = this.getUserId();
+	  console.log('🔵 this.userId:', this.userId);
 
-     // ✅ LUÔN SETUP EVENT LISTENER
-     this.setupEventListeners();
+	  if (!this.userId) {
+	    console.log('⚠️ User not logged in - Setting up toast');
 
-     // ✅ CHỈ TẠO MENU KHI ĐÃ ĐĂNG NHẬP
-     if (isLoggedIn) {
-       this.createQuickMenu();
-       this.setupQuickMenuListeners();
-     }
+	    const floatingBtn = document.getElementById('chatFloatingBtn');
+	    console.log('🔵 floatingBtn:', floatingBtn);
 
-     this.showChatButton();
-     console.log('✅ ChatWidget initialized');
-   },
+	    if (floatingBtn) {
+	      floatingBtn.style.display = 'flex';
+	      console.log('✅ Button display set to flex');
+
+	      floatingBtn.addEventListener('click', (e) => {
+	        console.log('🖱️ Chat button clicked!');
+	        e.preventDefault();
+	        e.stopPropagation();
+	        this.showLoginToast();
+	      });
+	      console.log('✅ Event listener added');
+	    } else {
+	      console.error('❌ floatingBtn not found!');
+	    }
+	    return;
+	  }
+
+	  console.log('✅ User logged in - Setting up chat normally');
+	  this.setupEventListeners();
+	  this.createQuickMenu();
+	  this.setupQuickMenuListeners();
+	  this.loadChatData();
+	  this.showChatButton();
+	  console.log('✅ ChatWidget initialized');
+  },
   createQuickMenu() {
     const modal = document.getElementById('chatModal');
     if (!modal) {
@@ -138,7 +157,45 @@ const ChatWidget = {
     const btn = document.getElementById('chatFloatingBtn');
     if (btn) btn.style.display = 'none';
   },
+  showLoginToast() {
+    // ✅ TẠO HOẶC LẤY TOAST ELEMENT
+    let toast = document.getElementById('chat-login-toast');
 
+    if (!toast) {
+      const toastHTML = `
+        <div id="chat-login-toast" class="cart-toast" style="
+          position: fixed;
+          right: 120px;
+          bottom: 110px;
+          background: #f59e0b;
+          color: white;
+          padding: 10px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+          opacity: 0;
+          transform: translateY(20px);
+          transition: all 0.4s ease;
+          pointer-events: none;
+          z-index: 9999;
+        ">
+          ⚠️ Vui lòng đăng nhập để sử dụng chat.
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', toastHTML);
+      toast = document.getElementById('chat-login-toast');
+    }
+
+    // ✅ HIỆN TOAST
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    // ✅ TỰ ĐỘNG ẨN SAU 2 GIÂY
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+    }, 2000);
+  },
   getUserId() {
       const attr = document.body.getAttribute('data-user-id');
 
