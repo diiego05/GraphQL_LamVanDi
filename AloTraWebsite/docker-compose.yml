@@ -1,21 +1,19 @@
 version: '3.8'
 
 services:
-  # Database - MySQL
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_alotra
+  # Database - SQL Server
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
-      MYSQL_ROOT_PASSWORD: Di0988800705@
-      MYSQL_DATABASE: alotra
-      MYSQL_USER: root
-      MYSQL_PASSWORD: Di0988800705@
+      SA_PASSWORD: "di0988800705"  # ← Tạo password cho sa user
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "di0988800705"
     ports:
-      - "3306:3306"
+      - "1433:1433"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "di0988800705", "-Q", "SELECT 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,25 +25,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: alotra_app
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: alotra
-      MYSQL_USER: root
-      MYSQL_PASSWORD: Di0988800705@
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://mssql:1433;databaseName=AloTra;encrypt=true;trustServerCertificate=true"
+      SPRING_DATASOURCE_USERNAME: "sa"
+      SPRING_DATASOURCE_PASSWORD: "di0988800705"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.SQLServerDialect"
     depends_on:
-      mysql:
+      mssql:
         condition: service_healthy
     networks:
       - alotra-network
     restart: unless-stopped
 
 volumes:
-  mysql_data:
+  mssql_data:
 
 networks:
   alotra-network:

@@ -26,7 +26,7 @@ public class Product {
     private String slug;
 
     @Lob
-    // @Column(columnDefinition = "nvarchar(max)")
+    @Column(columnDefinition = "nvarchar(max)")
     private String description;
 
     @Column(name = "Status") // Trường status đã được thêm lại
