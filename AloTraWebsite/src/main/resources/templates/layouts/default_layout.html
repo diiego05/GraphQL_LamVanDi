@@ -2,7 +2,9 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <!-- 🌟 Định nghĩa FRAGMENT "body" -->
-<body th:fragment="body(content, additionalJs)" class="d-flex flex-column h-100" th:attr="data-user-id=${#authentication.principal.id}">
+<body th:fragment="body(content, additionalJs)"
+      class="d-flex flex-column h-100"
+      th:data-user-id="${#authentication?.principal?.id ?: ''}">
 
 <head>
     <meta charset="UTF-8">
