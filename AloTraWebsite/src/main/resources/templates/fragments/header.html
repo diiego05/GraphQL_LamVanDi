@@ -153,22 +153,40 @@
             userItem.classList.add("d-none");
         }
 
-       logoutBtn?.addEventListener("click", async (e) => {
+    logoutBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Kiểm tra xem hàm showLogoutConfirm có tồn tại không (từ main.js)
+    let confirmed = false;
     if (typeof window.showLogoutConfirm === 'function') {
-        const confirmed = await window.showLogoutConfirm();
-        if (!confirmed) return;
+        confirmed = await window.showLogoutConfirm();
     } else {
-        // Fallback nếu hàm không có - tạo confirm tạm thời
-        const confirmed = await showLogoutConfirmLocal();
-        if (!confirmed) return;
+        confirmed = await showLogoutConfirmLocal();
     }
 
+    if (!confirmed) return;
+
+    // ✅ XÓA CHAT UI
+    try {
+        if (window.ChatWidget) {
+            window.ChatWidget.clearChatUI();
+            console.log('✅ Chat UI cleared');
+        }
+    } catch (error) {
+        console.error('❌ Error:', error);
+    }
+
+    // Xóa tất cả localStorage
     localStorage.removeItem("jwtToken");
-    window.location.href = `${contextPath}/login`;
+    sessionStorage.removeItem("jwtToken");
+    localStorage.removeItem('chatRoomId');
+    localStorage.removeItem('guestUserId');
+    localStorage.removeItem('currentChatRoomId');
+
+    // ✅ Delay nhỏ trước khi redirect
+    setTimeout(() => {
+        window.location.href = `${contextPath}/login`;
+    }, 100);
 });
 
 // Hàm confirm local cho header.html (backup)

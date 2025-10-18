@@ -5,6 +5,7 @@ import com.alotra.dto.ChatMessageDTO;
 import com.alotra.dto.ChatRoomDTO;
 import com.alotra.entity.ChatMessage;
 import com.alotra.entity.ChatRoom;
+import com.alotra.entity.Role;
 import com.alotra.entity.User;
 import com.alotra.repository.ChatMessageRepository;
 import com.alotra.repository.ChatRoomRepository;
@@ -24,10 +25,6 @@ public class ChatService {
     private final ChatRoomRepository roomRepository;
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
-
-    /**
-     * Tạo hoặc lấy phòng chat của người dùng
-     */
     @Transactional
     public ChatRoomDTO getOrCreateUserRoom(Long userId) {
         User user = userRepository.findById(userId)
@@ -37,6 +34,49 @@ public class ChatService {
                 .orElseGet(() -> {
                     ChatRoom newRoom = new ChatRoom();
                     newRoom.setUser(user);
+                    newRoom.setStatus("ACTIVE");
+                    return roomRepository.save(newRoom);
+                });
+
+        return mapRoomToDTO(room);
+    }
+
+    /**
+     * Tạo hoặc lấy phòng chat của người dùng
+     */
+    @Transactional
+    public ChatRoomDTO getOrCreateGuestRoom(String guestId) {
+        // Tìm hoặc tạo user guest
+        User guestUser = userRepository.findByEmail(guestId + "@guest.temp")
+                .orElseGet(() -> {
+                    User newGuest = new User();
+                    newGuest.setEmail(guestId + "@guest.temp");
+
+                    // Tạo tên "Khách Hàng X"
+                    long guestCount = userRepository.countByEmailContaining("@guest.temp") + 1;
+                    newGuest.setFullName("Khách Hàng " + guestCount);
+
+                    newGuest.setPhone("0000000000");
+
+                    // ✅ SỬA: Dùng setPasswordHash thay vì setPassword
+                    newGuest.setPasswordHash("GUEST_NO_LOGIN");
+
+                    // ✅ THÊM: Set status và role
+                    newGuest.setStatus("ACTIVE");
+
+                    // ✅ THÊM: Set role mặc định (giả sử role USER có id = 3)
+                    Role guestRole = new Role();
+                    guestRole.setId(3L); // ID của role USER
+                    newGuest.setRole(guestRole);
+
+                    return userRepository.save(newGuest);
+                });
+
+        // Tạo phòng chat cho guest
+        ChatRoom room = roomRepository.findByUserId(guestUser.getId())
+                .orElseGet(() -> {
+                    ChatRoom newRoom = new ChatRoom();
+                    newRoom.setUser(guestUser);
                     newRoom.setStatus("ACTIVE");
                     return roomRepository.save(newRoom);
                 });

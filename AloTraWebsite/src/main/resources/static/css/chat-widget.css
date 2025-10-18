@@ -4,6 +4,7 @@
 }
 
 /* ===== FLOATING BUTTON ===== */
+/* Fix icon lệch */
 .chat-floating-btn {
   position: fixed;
   bottom: 30px;
@@ -12,15 +13,26 @@
   height: 60px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   font-size: 28px;
   color: white;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
   transition: all 0.3s ease;
-  z-index: 9999; /* trên hầu hết overlay nhỏ */
+  z-index: 9999;
+  padding: 0 !important;
+  text-align: center;
+}
+
+.chat-floating-btn i.fas {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  position: relative !important;
+  left: 0 !important;
+  transform: translateX(0) !important;
 }
 .chat-floating-btn:hover { transform: scale(1.1); box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6); }
 .chat-floating-btn:active { transform: scale(0.95); }
@@ -208,3 +220,239 @@
 .chat-messages-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
 .chat-messages-container::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
 .chat-messages-container::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* ===== QUICK REPLY MENU ===== */
+.chat-quick-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
+  max-height: 220px; /* ✅ THÊM */
+  overflow-y: auto;
+  flex-shrink: 0; /* ✅ THÊM */
+  transition: max-height 0.3s ease, padding 0.3s ease; /* ✅ THÊM */
+}
+
+/* ✅ THÊM - MENU THU GỌN */
+.chat-quick-menu.collapsed {
+  max-height: 0;
+  padding: 0 12px;
+  overflow: hidden;
+  border-bottom: none;
+}
+
+.chat-quick-menu-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #667eea;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.chat-quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f9f9f9; /* ✅ SỬA: white → #f9f9f9 */
+  border: 1px solid #e0e0e0; /* ✅ SỬA: 1.5px → 1px */
+  border-radius: 6px; /* ✅ SỬA: 8px → 6px */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  color: #333;
+  text-align: left;
+}
+
+.chat-quick-btn:hover {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  transform: translateX(4px);
+}
+
+.chat-quick-btn i {
+  font-size: 16px;
+  min-width: 20px;
+}
+
+/* ❌ XÓA HOẶC COMMENT - KHÔNG CẦN NỮA */
+/* .chat-quick-menu.hidden {
+  display: none;
+} */
+
+/* ===== NÚT MŨI TÊN THU GỌN/MỞ RỘNG ===== */
+.chat-menu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: white;
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.chat-menu-toggle:hover {
+  background: #f5f5f5;
+}
+
+.chat-menu-toggle i {
+  font-size: 18px;
+  color: #667eea;
+  transition: transform 0.3s ease;
+}
+
+/* ✅ XOAY MŨI TÊN KHI THU GỌN */
+.chat-menu-toggle.collapsed i {
+  transform: rotate(180deg);
+}
+
+/* ===== ORDER CARD STYLES ===== */
+.orders-list {
+  max-width: 100% !important;
+  padding: 8px !important;
+}
+
+.order-card {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.order-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 4px;
+}
+
+.order-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.order-body p {
+  margin: 4px 0;
+  color: #666;
+}
+
+.order-body i {
+  width: 16px;
+  margin-right: 6px;
+  color: #667eea;
+}
+
+.order-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #667eea;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.order-link:hover {
+  text-decoration: underline;
+}
+
+/* ===== PROMO CARD STYLES ===== */
+.promo-card {
+  background: linear-gradient(135deg, #fff3cd 0%, #fffaeb 100%);
+  border: 1.5px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.promo-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ffc107;
+  color: #856404;
+}
+
+.promo-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.promo-body p {
+  margin: 4px 0;
+  color: #333;
+}
+
+.promo-body i {
+  width: 16px;
+  margin-right: 6px;
+  color: #ff9800;
+}
+
+.promo-body strong {
+  color: #e65100;
+  font-size: 14px;
+}
+.chat-login-toast {
+  position: fixed !important;
+  bottom: 30px !important; /* ✅ Cùng hàng với nút chat */
+  right: 110px !important; /* ✅ Bên trái nút chat */
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: white !important;
+  padding: 14px 20px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  z-index: 9998 !important;
+  animation: slideIn 0.3s ease !important;
+  max-width: 320px !important;
+}
+
+.chat-login-toast i {
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}

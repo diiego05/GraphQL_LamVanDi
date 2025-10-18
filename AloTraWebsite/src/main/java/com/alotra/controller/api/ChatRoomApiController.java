@@ -44,24 +44,23 @@ public class ChatRoomApiController {
      * GET /api/chat/user/{userId}
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getOrCreateUserRoom(@PathVariable Long userId) {
-        try {
-            System.out.println("🔍 [DEBUG] Getting chat room for userId: " + userId);
-            ChatRoomDTO room = chatService.getOrCreateUserRoom(userId);
-            System.out.println("✅ [DEBUG] Found/Created room: " + room.getId());
-            return ResponseEntity.ok(room);
-        } catch (Exception e) {
-            System.out.println("❌ [DEBUG] Exception: " + e.getMessage());
-            e.printStackTrace();
+    public ResponseEntity<ChatRoomDTO> getOrCreateUserRoom(@PathVariable String userId) {
+        ChatRoomDTO room;
 
-            // Trả về error response thay vì throw
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            error.put("userId", userId);
-            error.put("timestamp", java.time.LocalDateTime.now());
-
-            return ResponseEntity.status(400).body(error);
+        // Kiểm tra nếu là guest ID (bắt đầu bằng "guest_")
+        if (userId.startsWith("guest_")) {
+            room = chatService.getOrCreateGuestRoom(userId);
+        } else {
+            // User đã đăng nhập - PARSE String thành Long
+            try {
+                Long userIdLong = Long.parseLong(userId);
+                room = chatService.getOrCreateUserRoom(userIdLong);
+            } catch (NumberFormatException e) {
+                return ResponseEntity.badRequest().build();
+            }
         }
+
+        return ResponseEntity.ok(room);
     }
 
     /**

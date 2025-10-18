@@ -35,14 +35,14 @@ function showLogoutConfirm() {
         dialog.innerHTML = `
             <button style="position: absolute; top: 16px; right: 16px; background: transparent; border: none; font-size: 28px; color: #ccc; cursor: pointer; padding: 0; line-height: 1; width: 32px; height: 32px;" id="logoutClose">×</button>
             <div style="padding: 50px 24px 30px; text-align: center;">
-                <h4 style="color: #0066cc; font-weight: 700; font-size: 26px; margin-bottom: 24px; letter-spacing: 1px;">THÔNG BÁO</h4>
+                <h4 style="color: #006633; font-weight: 700; font-size: 26px; margin-bottom: 24px; letter-spacing: 1px;">THÔNG BÁO</h4>
                 <p style="font-size: 16px; color: #333; margin: 0; line-height: 1.6;">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống?</p>
             </div>
             <div style="padding: 0 30px 40px; display: flex; gap: 20px; justify-content: center;">
-                <button class="btn" id="logoutCancel" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #0099ff; color: white; border: none; transition: all 0.2s;">
+                <button class="btn" id="logoutCancel" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #28a745; color: white; border: none; transition: all 0.2s;">
                     Hủy bỏ
                 </button>
-                <button class="btn" id="logoutConfirm" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #0099ff; color: white; border: none; transition: all 0.2s;">
+                <button class="btn" id="logoutConfirm" style="min-width: 160px; font-weight: 600; padding: 14px 28px; border-radius: 8px; font-size: 16px; background: #28a745; color: white; border: none; transition: all 0.2s;">
                     Đồng ý
                 </button>
             </div>
@@ -55,12 +55,12 @@ function showLogoutConfirm() {
         const buttons = dialog.querySelectorAll('.btn');
         buttons.forEach(btn => {
             btn.addEventListener('mouseenter', () => {
-                btn.style.background = '#0077cc';
+                btn.style.background = '#218838';
                 btn.style.transform = 'translateY(-2px)';
-                btn.style.boxShadow = '0 4px 12px rgba(0, 153, 255, 0.3)';
+                btn.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
             });
             btn.addEventListener('mouseleave', () => {
-                btn.style.background = '#0099ff';
+                btn.style.background = '#28a745';
                 btn.style.transform = 'translateY(0)';
                 btn.style.boxShadow = 'none';
             });
@@ -99,7 +99,7 @@ function showLogoutConfirm() {
         document.addEventListener('keydown', handleEsc);
     });
 }
-
+window.showLogoutConfirm = showLogoutConfirm;
 // ===============================================================
 // === KHỞI TẠO TOÀN SITE (jQuery) ===
 // ===============================================================
@@ -150,24 +150,34 @@ $(document).ready(function() {
     });
 
     // =================== ĐĂNG XUẤT ===================
-    $(document).on("click", "#logoutBtn", async function(e) {
-        e.preventDefault();
+	$(document).on("click", "#logoutBtn", async function(e) {
+	    e.preventDefault();
 
-        console.log("🔵 Logout button clicked");
+	    const confirmed = await showLogoutConfirm();
+	    if (!confirmed) return;
 
-        // Hiển thị confirm dialog
-        const confirmed = await showLogoutConfirm();
+	    // ✅ BẮT BUỘC: XÓA CHAT UI TRƯỚC KHI REDIRECT
+	    try {
+	        if (window.ChatWidget) {
+	            window.ChatWidget.clearChatUI();
+	            console.log('✅ Chat UI cleared');
+	        }
+	    } catch (error) {
+	        console.error('❌ Error clearing chat:', error);
+	    }
 
-        console.log("✅ User decision:", confirmed);
+	    // Xóa token
+	    localStorage.removeItem("jwtToken");
+	    sessionStorage.removeItem("jwtToken");
+	    localStorage.removeItem('chatRoomId');
+	    localStorage.removeItem('guestUserId');
+	    localStorage.removeItem('currentChatRoomId');
 
-        if (!confirmed) return; // User bấm "Hủy bỏ"
-
-        // User bấm "Đồng ý" - Xóa token và redirect
-        localStorage.removeItem("jwtToken");
-        sessionStorage.removeItem("jwtToken");
-        window.location.href = "/alotra-website/";
-    });
-
+	    // ✅ REDIRECT SAU 100ms (đảm bảo clearChatUI() hoàn thành)
+	    setTimeout(() => {
+	        window.location.href = "/alotra-website/";
+	    }, 100);
+	});
     // =================== KIỂM TRA TRẠNG THÁI LOGIN ===================
     window.checkLoginStatus = function() {
         const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
