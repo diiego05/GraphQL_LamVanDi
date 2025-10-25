@@ -10,42 +10,9 @@ const ChatWidget = {
   menuListenersAdded: false, // ✅ THÊM: Track đã gắn event chưa
 
   init() {
-    // ✅ KIỂM TRA ĐĂNG NHẬP
-	console.log('🔵 ChatWidget.init() called');
-
-	  this.userId = this.getUserId();
-	  console.log('🔵 this.userId:', this.userId);
-
-	  if (!this.userId) {
-	    console.log('⚠️ User not logged in - Setting up toast');
-
-	    const floatingBtn = document.getElementById('chatFloatingBtn');
-	    console.log('🔵 floatingBtn:', floatingBtn);
-
-	    if (floatingBtn) {
-	      floatingBtn.style.display = 'flex';
-	      console.log('✅ Button display set to flex');
-
-	      floatingBtn.addEventListener('click', (e) => {
-	        console.log('🖱️ Chat button clicked!');
-	        e.preventDefault();
-	        e.stopPropagation();
-	        this.showLoginToast();
-	      });
-	      console.log('✅ Event listener added');
-	    } else {
-	      console.error('❌ floatingBtn not found!');
-	    }
-	    return;
-	  }
-
-	  console.log('✅ User logged in - Setting up chat normally');
-	  this.setupEventListeners();
-	  this.createQuickMenu();
-	  this.setupQuickMenuListeners();
-	  this.loadChatData();
-	  this.showChatButton();
-	  console.log('✅ ChatWidget initialized');
+	this.setupEventListeners();
+	   this.showChatButton();
+	   console.log('✅ ChatWidget initialized');
   },
   createQuickMenu() {
     const modal = document.getElementById('chatModal');
@@ -154,47 +121,53 @@ const ChatWidget = {
   },
 
   hideChatButton() {
-    const btn = document.getElementById('chatFloatingBtn');
-    if (btn) btn.style.display = 'none';
+	const btn = document.getElementById('chatFloatingBtn');
+	  if (btn) {
+	    btn.style.display = 'none';
+	    btn.style.visibility = 'hidden';
+	    btn.style.opacity = '0';
+	    btn.style.pointerEvents = 'none';
+	  }
   },
   showLoginToast() {
     // ✅ TẠO HOẶC LẤY TOAST ELEMENT
-    let toast = document.getElementById('chat-login-toast');
+	let toast = document.getElementById('chat-login-toast');
 
-    if (!toast) {
-      const toastHTML = `
-        <div id="chat-login-toast" class="cart-toast" style="
-          position: fixed;
-          right: 120px;
-          bottom: 110px;
-          background: #f59e0b;
-          color: white;
-          padding: 10px 16px;
-          border-radius: 8px;
-          font-size: 14px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-          opacity: 0;
-          transform: translateY(20px);
-          transition: all 0.4s ease;
-          pointer-events: none;
-          z-index: 9999;
-        ">
-          ⚠️ Vui lòng đăng nhập để sử dụng chat.
-        </div>
-      `;
-      document.body.insertAdjacentHTML('beforeend', toastHTML);
-      toast = document.getElementById('chat-login-toast');
-    }
+	  if (!toast) {
+	    const toastHTML = `
+	      <div id="chat-login-toast" style="
+	        position: fixed;
+	        right: 100px;
+	        bottom: 30px;
+	        background: #dc3545;
+	        color: white;
+	        padding: 12px 18px;
+	        border-radius: 8px;
+	        font-size: 14px;
+	        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+	        opacity: 0;
+	        transform: translateX(20px);
+	        transition: all 0.3s ease;
+	        pointer-events: none;
+	        z-index: 9998;
+	        white-space: nowrap;
+	      ">
+	        ⚠️ Vui lòng đăng nhập để sử dụng chat.
+	      </div>
+	    `;
+	    document.body.insertAdjacentHTML('beforeend', toastHTML);
+	    toast = document.getElementById('chat-login-toast');
+	  }
 
-    // ✅ HIỆN TOAST
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateY(0)';
+	  // Hiện toast (slide từ phải sang trái)
+	  toast.style.opacity = '1';
+	  toast.style.transform = 'translateX(0)';
 
-    // ✅ TỰ ĐỘNG ẨN SAU 2 GIÂY
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateY(20px)';
-    }, 2000);
+	  // Tự động ẩn sau 2.5 giây
+	  setTimeout(() => {
+	    toast.style.opacity = '0';
+	    toast.style.transform = 'translateX(20px)';
+	  }, 2500);
   },
   getUserId() {
       const attr = document.body.getAttribute('data-user-id');
@@ -239,42 +212,53 @@ const ChatWidget = {
   },
 
   toggleModal() {
-    const modal = document.getElementById('chatModal');
-    if (!modal) return;
+	const token = localStorage.getItem("jwtToken") || sessionStorage.getItem("jwtToken");
 
-    const opening = !modal.classList.contains('active');
+	    // ❌ KHÔNG CÓ TOKEN → HIỆN TOAST → DỪNG LẠI
+	    if (!token) {
+	      console.log('⚠️ User not logged in - Show toast');
+	      this.showLoginToast();
+	      return;
+	    }
 
-    if (opening) {
-      this.userId = this.getUserId();
+	    // ✅ CÓ TOKEN → LẤY userId
+	    this.userId = this.getUserId();
 
-      // ✅ KIỂM TRA ĐĂNG NHẬP - HIỂN THỊ TOAST THAY VÌ ALERT
-      if (!this.userId) {
-        this.showLoginRequiredToast();
-        return; // ✅ KHÔNG MỞ MODAL
-      }
+	    if (!this.userId) {
+	      console.log('⚠️ No userId found - Show toast');
+	      this.showLoginToast();
+	      return;
+	    }
 
-      modal.classList.add('active', 'is-open');
+	    // ✅ MỞ MODAL BÌNH THƯỜNG
+	    const modal = document.getElementById('chatModal');
+	    if (!modal) return;
 
-      if (this.lastUserId && this.lastUserId !== this.userId) {
-        console.log('⚠️ User changed! Resetting room...');
-        this.roomId = null;
-        this.disconnectWebSocket();
-      }
+	    const opening = !modal.classList.contains('active');
 
-      this.lastUserId = this.userId;
+	    if (opening) {
+	      console.log('🔵 Opening chat modal...');
+	      modal.classList.add('active', 'is-open');
 
-      if (!this.roomId) {
-        this.loadChatData();
-      } else {
-        this.connectWebSocket();
-        this.loadChatHistory();
-      }
+	      if (!this.roomId) {
+	        console.log('📡 First time opening - loading chat data...');
+	        this.createQuickMenu();
+	        this.setupQuickMenuListeners();
+	        this.loadChatData();
+	      } else {
+	        console.log('🔄 Already have room - reconnecting...');
+	        if (!this.stompClient || !this.stompClient.connected) {
+	          this.connectWebSocket();
+	        }
+	        this.loadChatHistory();
+	      }
 
-      this.scrollToBottom();
-      setTimeout(()=>document.getElementById('chatMessageInput')?.focus(),0);
-    } else {
-      modal.classList.remove('active', 'is-open');
-    }
+	      this.scrollToBottom();
+	      setTimeout(() => document.getElementById('chatMessageInput')?.focus(), 0);
+	    } else {
+	      console.log('🔵 Closing chat modal...');
+	      modal.classList.remove('active', 'is-open');
+	    }
   },
   showLoginRequiredToast() {
       console.log('🔵 showLoginRequiredToast called');
@@ -456,19 +440,13 @@ const ChatWidget = {
   async loadPromotions() {
     try {
       const token = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
-
-      // ✅ SỬA URL: Gọi API lấy campaigns ACTIVE
       const res = await fetch('http://localhost:8080/alotra-website/api/admin/promotions/campaigns', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
 
       if (!res.ok) throw new Error('Không thể tải khuyến mãi');
 
       const promotions = await res.json();
-
-      // ✅ LỌC KHUYẾN MÃI ĐANG ACTIVE
       const activePromotions = promotions.filter(p => p.status === 'ACTIVE');
 
       if (activePromotions.length === 0) {
@@ -494,24 +472,37 @@ const ChatWidget = {
     }
   },
 
-  // ✅ HIỂN THỊ KHUYẾN MÃI
   displayPromotions(promotions) {
     const container = document.getElementById('chatMessagesContainer');
 
     const promoCards = promotions.map(promo => {
-      const startDate = new Date(promo.startDate).toLocaleDateString('vi-VN');
-      const endDate = new Date(promo.endDate).toLocaleDateString('vi-VN');
+      const startDate = new Date(promo.startAt).toLocaleDateString('vi-VN');
+      const endDate = new Date(promo.endAt).toLocaleDateString('vi-VN');
 
+      let discountText = '';
+      if (promo.type === 'ORDER_PERCENT' || promo.type === 'SHIPPING_PERCENT') {
+        // nếu là percent
+        if (promo.value > 100) {
+          discountText = `${promo.value.toLocaleString('vi-VN')} ₫`;
+        } else {
+          discountText = `${promo.value}%`;
+        }
+      } else if (promo.type === 'ORDER_FIXED') {
+        discountText = `${promo.value.toLocaleString('vi-VN')} ₫`;
+      }
+
+      // 👉 Thêm onclick để điều hướng
       return `
-        <div class="promo-card">
+        <div class="promo-card"
+             style="cursor:pointer"
+             onclick="window.location.href='http://localhost:8080/alotra-website/promotions/${promo.id}'">
           <div class="promo-header">
             <strong>🎁 ${promo.name}</strong>
           </div>
           <div class="promo-body">
             <p>${promo.description || 'Giảm giá đặc biệt'}</p>
-            <p><i class="fas fa-percentage"></i> Giảm: <strong>${promo.discountValue}${promo.discountType === 'PERCENTAGE' ? '%' : ' ₫'}</strong></p>
+            <p><i class="fas fa-tag"></i> Ưu đãi: <strong>${discountText}</strong></p>
             <p><i class="fas fa-calendar"></i> ${startDate} - ${endDate}</p>
-            ${promo.minOrderValue ? `<p><i class="fas fa-shopping-cart"></i> Đơn tối thiểu: ${promo.minOrderValue.toLocaleString('vi-VN')} ₫</p>` : ''}
           </div>
         </div>
       `;
@@ -531,7 +522,9 @@ const ChatWidget = {
 
     container.insertAdjacentHTML('beforeend', promoMessage);
     this.scrollToBottom(true);
-  },
+  }
+
+,
 
   displayOrders(orders) {
     const container = document.getElementById('chatMessagesContainer');

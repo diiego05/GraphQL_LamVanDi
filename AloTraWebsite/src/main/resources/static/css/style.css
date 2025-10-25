@@ -28,6 +28,24 @@ body {
     transform: translateY(0);
 }
 
+.review-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.review-image, .review-video {
+  max-width: 300px;
+  max-height: 300px;
+  object-fit: cover;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.review-image:hover, .review-video:hover {
+  transform: scale(1.05);
+}
+
 /* 🛒 hiệu ứng rung nhẹ cho giỏ hàng */
 @keyframes cart-bounce {
     0%   { transform: scale(1); }

@@ -251,8 +251,8 @@
                 });
 
                 if (response.ok) {
-                    alert('✅ Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.');
-                    window.location.href = `${contextPath}login`;
+                	showSuccessModal();
+
                 } else {
                     const errorResponse = await response.json().catch(() => ({}));
                     otpError.textContent = errorResponse.error || '❌ Mã OTP không hợp lệ.';
@@ -264,6 +264,102 @@
             }
         });
     });
+    function showSuccessModal() {
+    	const contextPath = (document.body.dataset.contextPath || '/alotra-website').replace(/\/$/, '');
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease;
+        `;
+
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: #2d2d2d;
+            color: white;
+            border-radius: 16px;
+            padding: 35px 45px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            max-width: 480px;
+            width: 90%;
+            text-align: center;
+            animation: slideUp 0.3s ease;
+        `;
+
+        modal.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <i class="fas fa-circle-check" style="font-size: 60px; color: #28a745;"></i>
+            </div>
+            <h3 style="font-size: 20px; font-weight: 600; margin: 0 0 15px 0;">
+                AloTra xin chúc mừng!
+            </h3>
+            <p style="font-size: 15px; margin: 0 0 25px 0; line-height: 1.6; opacity: 0.9;">
+                Đăng ký thành công! Bạn sẽ được chuyển đến trang đăng nhập.
+            </p>
+            <button id="success-modal-ok-btn" style="
+                background: #5c9eff;
+                color: white;
+                border: 2px solid #4a8ce7;
+                padding: 10px 40px;
+                border-radius: 25px;
+                font-size: 15px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            ">
+                OK
+            </button>
+        `;
+
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+
+        // Thêm animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px) scale(0.95);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Xử lý click nút OK
+        const okBtn = document.getElementById('success-modal-ok-btn');
+        okBtn.addEventListener('click', () => {
+            window.location.href = `${contextPath}/login`;
+        });
+
+        // Hover effect
+        okBtn.addEventListener('mouseenter', () => {
+            okBtn.style.background = '#4a8ce7';
+            okBtn.style.transform = 'scale(1.05)';
+        });
+        okBtn.addEventListener('mouseleave', () => {
+            okBtn.style.background = '#5c9eff';
+            okBtn.style.transform = 'scale(1)';
+        });
+
+        // Không cho đóng khi click overlay (bắt buộc phải bấm OK)
+    }
 </script>
 </th:block>
 

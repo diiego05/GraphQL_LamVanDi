@@ -141,7 +141,7 @@ $(document).ready(function() {
         },
         error: function(xhr) {
             if (xhr.status === 401 || xhr.status === 403) {
-                alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+                showAlert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
                 localStorage.removeItem("jwtToken");
                 sessionStorage.removeItem("jwtToken");
                 window.location.href = "/alotra-website/login";
@@ -156,7 +156,6 @@ $(document).ready(function() {
 	    const confirmed = await showLogoutConfirm();
 	    if (!confirmed) return;
 
-	    // ✅ BẮT BUỘC: XÓA CHAT UI TRƯỚC KHI REDIRECT
 	    try {
 	        if (window.ChatWidget) {
 	            window.ChatWidget.clearChatUI();
@@ -166,14 +165,15 @@ $(document).ready(function() {
 	        console.error('❌ Error clearing chat:', error);
 	    }
 
-	    // Xóa token
 	    localStorage.removeItem("jwtToken");
 	    sessionStorage.removeItem("jwtToken");
 	    localStorage.removeItem('chatRoomId');
 	    localStorage.removeItem('guestUserId');
 	    localStorage.removeItem('currentChatRoomId');
 
-	    // ✅ REDIRECT SAU 100ms (đảm bảo clearChatUI() hoàn thành)
+	    // ✅ THÊM DÒNG NÀY
+	    document.body.removeAttribute('data-user-id');
+
 	    setTimeout(() => {
 	        window.location.href = "/alotra-website/";
 	    }, 100);

@@ -1529,5 +1529,108 @@ public class ProductService {
                 .limit(limit)
                 .collect(Collectors.toList());
     }
+
+
+    @Transactional
+    public void updateProductForBranch(Long id, ProductFormDTO dto, List<MultipartFile> files, Long branchId) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sản phẩm!"));
+
+        // ✅ Cập nhật thông tin chung (nếu bạn muốn cho phép)
+        product.setName(dto.getName());
+        product.setSlug(toSlug(dto.getName()));
+        product.setDescription(dto.getDescription());
+        product.setStatus(dto.getStatus());
+
+        Category category = categoryRepository.findById(dto.getCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục!"));
+        product.setCategory(category);
+
+        // 🧹 Xóa các variant cũ của sản phẩm (trong DB)
+        List<ProductVariant> oldVariants = productVariantRepository.findByProductId(id);
+
+        // ⚠️ Xóa inventory chỉ của chi nhánh hiện tại (không đụng chi nhánh khác)
+        for (ProductVariant oldVariant : oldVariants) {
+            branchInventoryRepository.deleteByVariantIdAndBranchId(oldVariant.getId(), branchId);
+        }
+
+        product.getVariants().clear();
+        productRepository.save(product);
+        productRepository.flush();
+
+        String variantStatus = "ACTIVE".equalsIgnoreCase(product.getStatus()) ? "ACTIVE" : "INACTIVE";
+
+        // 🆕 Thêm variant mới
+        dto.getVariants().forEach(variantDTO -> {
+            Size size = sizeRepository.findById(variantDTO.getSizeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy size!"));
+            ProductVariant variant = new ProductVariant();
+            variant.setProduct(product);
+            variant.setSize(size);
+            variant.setPrice(variantDTO.getPrice());
+            variant.setSku(product.getSlug() + "-" + size.getCode());
+            variant.setStatus(variantStatus);
+            product.getVariants().add(variant);
+        });
+
+        // 🖼️ Cập nhật media (nếu cho phép theo chi nhánh)
+        if (files != null && !files.isEmpty()) {
+            product.getMedia().clear();
+            final AtomicInteger counter = new AtomicInteger(0);
+            files.forEach(file -> {
+                String url = cloudinaryService.uploadFile(file);
+                ProductMedia media = new ProductMedia();
+                media.setProduct(product);
+                media.setUrl(url);
+                media.setPrimary(counter.getAndIncrement() == 0);
+                product.getMedia().add(media);
+            });
+        }
+
+        Product updatedProduct = productRepository.save(product);
+
+        // 🏪 Cập nhật inventory chỉ cho branchId này
+        String inventoryStatus = "ACTIVE".equalsIgnoreCase(updatedProduct.getStatus()) ? "AVAILABLE" : "DISABLED";
+
+        for (ProductVariant variant : updatedProduct.getVariants()) {
+            BranchInventory inventory = new BranchInventory();
+            inventory.setBranchId(branchId);
+            inventory.setVariantId(variant.getId());
+            inventory.setStatus(inventoryStatus);
+            branchInventoryRepository.save(inventory);
+        }
+    }
+    @Transactional(readOnly = true)
+    public List<ProductSummaryDTO> getTopBestSellers(int limit) {
+        List<Object[]> salesData = productRepository.findProductSalesCounts();
+
+        if (salesData == null || salesData.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, Long> salesMap = salesData.stream()
+                .collect(Collectors.toMap(
+                        row -> ((Number) row[0]).longValue(),
+                        row -> ((Number) row[1]).longValue()
+                ));
+
+        List<Product> products = productRepository.findAllByStatus("ACTIVE");
+
+        return products.stream()
+                .filter(p -> salesMap.containsKey(p.getId()))
+                .map(product -> {
+                    ProductSummaryDTO dto = new ProductSummaryDTO(product);
+                    applyPromotion(dto, product);
+                    dto.setSoldCount(salesMap.getOrDefault(product.getId(), 0L));
+                    return dto;
+                })
+                .sorted((a, b) -> Long.compare(b.getSoldCount(), a.getSoldCount()))
+                .limit(limit)
+                .toList();
+    }
+
+
+
+
 }
 
