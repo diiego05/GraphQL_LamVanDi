@@ -1,0 +1,17 @@
+# Replace old secrets in history => redacted labels
+# Format: literal:OLD==>REPLACEMENT
+literal:dmxxo6wgl==>REDACTED_CLOUDINARY_CLOUD_NAME
+literal:315628768938735==>REDACTED_CLOUDINARY_API_KEY
+literal:w9ziEUTs3giXY9hR8O1S75NBIF4==>REDACTED_CLOUDINARY_API_SECRET
+literal:tinthanhn81@gmail.com==>REDACTED_MAIL_USERNAME
+literal:onrcrcgevjclevax==>REDACTED_MAIL_PASSWORD
+literal:3cfa76ef14937c1c0ea519f8fc057a80fcd04a7420f8e8bcd0a7567c272e007b==>REDACTED_JWT_SECRET
+literal:a16078af-d029-481f-99f1-cbaa3665d14b==>REDACTED_PAYOS_CLIENT_ID
+literal:18212097-e1db-4601-aee7-69302e6d5c72==>REDACTED_PAYOS_API_KEY
+literal:e5c62fb63baf7689c0e85ddce9695699f399b67b68cf9c3e7169e175f63e4e93==>REDACTED_PAYOS_CHECKSUM_KEY
+literal:4YUP19I4==>REDACTED_VNPAY_TMN_CODE
+literal:MDUIFDCRAKLNBPOFIAFNEKFRNMFBYEPX==>REDACTED_VNPAY_HASH_SECRET
+literal:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html==>REDACTED_VNPAY_PAY_URL
+literal:http://localhost:8080/alotra-website/api/payment/vnpay/return==>REDACTED_VNPAY_RETURN_URL
+literal:599351778533-rr6ano58f4pmoquesbuqmbh08fgav195.apps.googleusercontent.com==>REDACTED_GOOGLE_CLIENT_ID
+literal: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==>REDACTED_GOOGLE_CLIENT_SECRET
