@@ -1,24 +1,6 @@
 version: '3.8'
 
 services:
-  mssql:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    environment:
-      SA_PASSWORD: "di0988800705"
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "di0988800705"
-    ports:
-      - "1433:1433"
-    volumes:
-      - mssql_data:/var/opt/mssql
-    healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "di0988800705", "-Q", "SELECT 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - alotra-network
-
   app:
     build:
       context: .
@@ -27,21 +9,14 @@ services:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: "jdbc:sqlserver://mssql:1433;databaseName=AloTra;encrypt=true;trustServerCertificate=true"
-      SPRING_DATASOURCE_USERNAME: "sa"
-      SPRING_DATASOURCE_PASSWORD: "di0988800705"
-      SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+
+      # 🔗 Kết nối đến Azure SQL
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://alotrasqlserver.database.windows.net:1433;database=AloTraWeb;encrypt=true;trustServerCertificate=false;"
+      SPRING_DATASOURCE_USERNAME: "your_azure_user@alotrasqlserver"
+      SPRING_DATASOURCE_PASSWORD: "your_password"
+
+      # ⚙️ Hibernate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: "none"
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: "org.hibernate.dialect.SQLServerDialect"
-    depends_on:
-      mssql:
-        condition: service_healthy
-    networks:
-      - alotra-network
+
     restart: unless-stopped
-
-volumes:
-  mssql_data:
-
-networks:
-  alotra-network:
-    driver: bridge

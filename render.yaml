@@ -1,0 +1,35 @@
+# Template render.yaml - chỉnh lại giá trị placeholder trước khi dùng
+services:
+  - type: web
+    name: alotra-website
+    env: docker
+    plan: starter
+    branch: main
+    dockerfilePath: ./Dockerfile
+    region: oregon
+    # Không đặt secret thật trong file này — set giá trị thực trên Render UI
+    envVars:
+      - key: SERVER_SERVLET_CONTEXT_PATH
+        value: "/alotra-website"
+      - key: SPRING_DATASOURCE_URL
+        value: "<YOUR_JDBC_URL>"
+      - key: SPRING_DATASOURCE_USERNAME
+        value: "<DB_USER>"
+      - key: SPRING_DATASOURCE_PASSWORD
+        value: "<DB_PASS>"
+      - key: SECURITY_JWT_SECRET_KEY
+        value: "<JWT_SECRET>"
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_ID
+        value: "<GOOGLE_CLIENT_ID>"
+      - key: SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_CLIENT_SECRET
+        value: "<GOOGLE_CLIENT_SECRET>"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: "<CLOUDINARY_CLOUD_NAME>"
+      - key: CLOUDINARY_API_KEY
+        value: "<CLOUDINARY_API_KEY>"
+      - key: CLOUDINARY_API_SECRET
+        value: "<CLOUDINARY_API_SECRET>"
+      - key: SPRING_MAIL_USERNAME
+        value: "<MAIL_USER>"
+      - key: SPRING_MAIL_PASSWORD
+        value: "<MAIL_PASS>"
