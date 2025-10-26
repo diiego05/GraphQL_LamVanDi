@@ -11,7 +11,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
 
       # 🔗 Kết nối đến Azure SQL
-      SPRING_DATASOURCE_URL: "jdbc:sqlserver://alotra.database.windows.net:1433;database=AloTraWeb;encrypt=true;trustServerCertificate=false;"
+      SPRING_DATASOURCE_URL: "jdbc:sqlserver://alotra.database.windows.net:1433;database=AloTraWeb;encrypt=true;trustServerCertificate=true;"
       SPRING_DATASOURCE_USERNAME: "lamvandi"
       SPRING_DATASOURCE_PASSWORD: "Di25032005@"
 
