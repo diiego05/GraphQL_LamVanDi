@@ -12,8 +12,8 @@ services:
 
       # 🔗 Kết nối đến Azure SQL
       SPRING_DATASOURCE_URL: "jdbc:sqlserver://alotra.database.windows.net:1433;database=AloTraWeb;encrypt=true;trustServerCertificate=false;"
-      SPRING_DATASOURCE_USERNAME: "your_azure_user@alotrasqlserver"
-      SPRING_DATASOURCE_PASSWORD: "your_password"
+      SPRING_DATASOURCE_USERNAME: "lamvandi"
+      SPRING_DATASOURCE_PASSWORD: "Di25032005@"
 
       # ⚙️ Hibernate
       SPRING_JPA_HIBERNATE_DDL_AUTO: "none"
