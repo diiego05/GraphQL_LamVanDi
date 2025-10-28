@@ -36,4 +36,9 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
 
     // 📍 ✅ Kiểm tra chi nhánh có thuộc về vendor không
     boolean existsByIdAndManagerId(Long branchId, Long managerId);
+    List<Branch> findByLatitudeIsNotNullAndLongitudeIsNotNull();
+    List<Branch> findByStatusAndLatitudeIsNotNullAndLongitudeIsNotNull(String status);
+
+    // 🆕 Branches missing coordinates
+    List<Branch> findByLatitudeIsNullOrLongitudeIsNull();
 }

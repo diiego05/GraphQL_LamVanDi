@@ -547,6 +547,53 @@ body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f5f5f5;
             await getCurrentAdminId();
             await loadRooms();
             connectWebSocket();
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const userIdParam = params.get('userId');
+                if (userIdParam) {
+                    console.log('🔎 userId param present:', userIdParam);
+                    // Try to find an existing room for that user
+                    const existing = allRooms.find(r => String(r.userId) === String(userIdParam));
+                    if (existing) {
+                        // Select it after a tick to ensure UI rendered
+                        setTimeout(() => selectRoom(existing), 120);
+                    } else {
+                        // If not present, call API to create/get the room and then select it
+                        try {
+                            const resp = await fetch(`${API_URL}/user/${encodeURIComponent(userIdParam)}`, {
+                                method: 'GET',
+                                credentials: 'include',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            if (resp.ok) {
+                                const room = await resp.json();
+                                // Prepend to rooms list and display
+                                allRooms.unshift(room);
+                                displayRooms(allRooms);
+                                // Subscribe to this room if websocket already connected
+                                if (stompClient && stompClient.connected) {
+                                    try {
+                                        stompClient.subscribe(`/topic/chat/room/${room.id}`, function(message) {
+                                            const msg = JSON.parse(message.body);
+                                            console.log('📥 Message received (subscribed late):', msg);
+                                            if (msg.id && currentRoomId === msg.roomId) displayMessage(msg);
+                                            loadRooms();
+                                        });
+                                    } catch (e) { console.warn('❌ Failed to subscribe to new room', e); }
+                                }
+                                // Select the room UI
+                                setTimeout(() => selectRoom(room), 120);
+                            } else {
+                                console.warn('⚠️ Could not get/create room for userId', userIdParam, resp.status);
+                            }
+                        } catch (err) {
+                            console.error('❌ Error creating/getting room for userId param:', err);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('❌ Error handling userId param', e);
+            }
         });
     </script>
 </body>

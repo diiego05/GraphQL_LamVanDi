@@ -6,9 +6,11 @@ import com.alotra.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
-
+import org.springframework.format.annotation.DateTimeFormat;
 @RestController
 @RequestMapping("/api/vendor/orders")
 @RequiredArgsConstructor
@@ -22,9 +24,16 @@ public class OrderVendorApiController {
      * ✅ OrderDTO đã bao gồm thông tin thanh toán mới nhất (PaymentDTO)
      */
     @GetMapping
-    public ResponseEntity<List<OrderDTO>> getOrders(@RequestParam(required = false) String status) {
+    public ResponseEntity<List<OrderDTO>> getOrders(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "q", required = false) String keyword
+    ) {
         Long vendorId = userService.getCurrentUserId();
-        List<OrderDTO> orders = orderService.getOrdersByVendor(vendorId, status);
+        LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
+        LocalDateTime toDt = to != null ? to.atTime(LocalTime.MAX) : null;
+        List<OrderDTO> orders = orderService.getOrdersByVendor(vendorId, status, fromDt, toDt, keyword);
         return ResponseEntity.ok(orders);
     }
 

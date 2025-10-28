@@ -43,6 +43,12 @@ public class BranchRegistrationRequest {
     @Column(name = "Phone", length = 20)
     private String phone;
 
+
+    @Column(name = "Latitude")
+    private Double latitude;
+
+    @Column(name = "Longitude")
+    private Double longitude;
     // Trạng thái yêu cầu
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false, length = 20)

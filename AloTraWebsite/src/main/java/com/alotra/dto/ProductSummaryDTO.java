@@ -21,7 +21,7 @@ public class ProductSummaryDTO {
     private String priceRange;
     private BigDecimal lowestPrice;          // Giá thấp nhất
     private Long defaultVariantId;           // ID của biến thể rẻ nhất
-
+    private Long categoryId;
     // ✅ Các trường phục vụ giảm giá
     private boolean hasDiscount;             // Có giảm giá hay không
     private BigDecimal originalPrice;        // Giá gốc
@@ -32,7 +32,7 @@ public class ProductSummaryDTO {
         this.id = product.getId();
         this.slug = product.getSlug();
         this.name = product.getName();
-
+        this.categoryId = product.getCategory() != null ? product.getCategory().getId() : null;
         // Ảnh đại diện
         this.imageUrl = product.getMedia().stream()
                 .filter(ProductMedia::isPrimary)

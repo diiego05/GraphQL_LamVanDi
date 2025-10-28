@@ -288,7 +288,15 @@ public class OrderService {
         var items = cartService.getItemDetailsByIds(userId, req.getCartItemIds());
         if (items.isEmpty()) throw new IllegalArgumentException("Cart items không hợp lệ");
 
-        var unavailable = branchService.checkCartItemAvailability(req.getBranchId(), req.getCartItemIds());
+        Long selectedBranchId = req.getBranchId();
+        if (selectedBranchId == null) {
+            selectedBranchId = findNearestActiveBranchId(userId, req.getAddressId());
+            if (selectedBranchId == null) {
+                throw new IllegalStateException("Không thể xác định chi nhánh gần nhất. Vui lòng chọn chi nhánh.");
+            }
+        }
+
+        var unavailable = branchService.checkCartItemAvailability(selectedBranchId, req.getCartItemIds());
         if (!unavailable.isEmpty()) {
             throw new IllegalStateException("Một số sản phẩm không khả dụng tại chi nhánh này.");
         }
@@ -327,7 +335,7 @@ public class OrderService {
         Order order = Order.builder()
                 .code(generateOrderCode())
                 .userId(userId)
-                .branchId(req.getBranchId())
+                .branchId(selectedBranchId)
                 .shippingCarrierId(req.getShippingCarrierId())
                 .couponId(couponId)
                 .deliveryAddress(deliveryAddress)
@@ -427,105 +435,32 @@ public class OrderService {
     }
 
 
-    @Async
-    public void sendAsyncNotifications(Long userId, Order order, List<OrderItem> orderItems) {
-        safe(() -> emailService.sendOrderConfirmationEmail(userId, order, orderItems));
-        safe(() -> notificationService.create(
-                userId,
-                "ORDER",
-                "Đặt hàng thành công",
-                "Đơn hàng #" + order.getCode() + " đã được tạo thành công.",
-                "Order",
-                order.getId()
-        ));
+    private Long findNearestActiveBranchId(Long userId, Long addressId) {
+        var opt = addressService.getCoordinates(userId, addressId);
+        if (opt.isEmpty()) return null;
+        double lat = opt.get().latitude();
+        double lng = opt.get().longitude();
+        return branchRepository.findByStatus("ACTIVE").stream()
+                .filter(b -> b.getLatitude() != null && b.getLongitude() != null)
+                .min(Comparator.comparingDouble(b -> haversineKm(lat, lng, b.getLatitude(), b.getLongitude())))
+                .map(Branch::getId)
+                .orElse(null);
     }
 
-    private String normalizePaymentMethod(String pm) {
-        if (pm == null) return PaymentMethod.COD.name();
-        try {
-            return PaymentMethod.valueOf(pm.toUpperCase()).name();
-        } catch (Exception e) {
-            return PaymentMethod.COD.name();
-        }
-    }
-
-    private String generateOrderCode() {
-        String ymd = java.time.LocalDate.now().toString().replaceAll("-", "");
-        String rand = String.valueOf((int) (Math.random() * 90000) + 10000);
-        return "ALO-" + ymd + "-" + rand;
-    }
-
-    private void safe(Runnable r) {
-        try {
-            r.run();
-        } catch (Exception ignored) {
-        }
-    }
-
-    @Transactional(readOnly = true)
-    public Order findOrderById(Long id) {
-        return orderRepository.findById(id).orElse(null);
-    }
-
-    @Transactional
-    public void updateOrderStatusByCode(String code, String status, String note) {
-        Order order = orderRepository.findByCode(code).orElse(null);
-        if (order != null) {
-            order.setStatus(status);
-            order.setUpdatedAt(LocalDateTime.now());
-            orderRepository.save(order);
-
-            orderStatusHistoryRepository.save(OrderStatusHistory.builder()
-                    .order(order)
-                    .status(status)
-                    .changedAt(LocalDateTime.now())
-                    .note(note)
-                    .build());
-
-            sendAsyncNotifications(order.getUserId(), order);
-        }
-    }
-
-    @Async
-    public void sendAsyncNotifications(Long userId, Order order) {
-        // 🧾 1. Kiểm tra trạng thái thanh toán riêng (nếu có Payment)
-        safe(() -> {
-            var payment = paymentRepository.findTopByOrderIdOrderByPaidAtDesc(order.getId());
-            if (payment.isPresent()) {
-                var pay = payment.get();
-                switch (pay.getStatus()) {
-                    case SUCCESS -> emailService.sendPaymentSuccessEmail(userId, order);
-                    case FAILED -> emailService.sendPaymentFailedEmail(userId, order);
-                    default -> {} // không gửi mail nếu chưa thanh toán
-                }
-            }
-        });
-
-        // 📨 2. Gửi thông báo cập nhật trạng thái đơn hàng
-        String vnStatus = getStatusLabel(order.getStatus());
-        safe(() -> notificationService.create(
-                userId,
-                "ORDER",
-                "Cập nhật trạng thái đơn hàng",
-                String.format("Đơn hàng #%s đã được cập nhật trạng thái: %s", order.getCode(), vnStatus),
-                "Order",
-                order.getId()
-        ));
+    private double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371.0; // km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
     }
 
 
-    private String getStatusLabel(String status) {
-        return switch (status) {
-            case "PENDING" -> "Chờ xác nhận";
-            case "CONFIRMED" -> "Đã xác nhận";
-            case "SHIPPING" -> "Đang giao";
-            case "COMPLETED" -> "Hoàn thành";
-            case "CANCELED" -> "Đã hủy";
-            case "PAID" -> "Thanh toán thành công";
-            case "FAILED" -> "Thanh toán thất bại";
-            default -> status;
-        };
-    }
+
+
 
 
     // ====================================
@@ -880,15 +815,11 @@ public class OrderService {
     // ====================================
 
     @Transactional(readOnly = true)
-    public List<OrderDTO> getOrdersByVendor(Long vendorId, String status) {
-        List<Order> orders;
+    public List<OrderDTO> getOrdersByVendor(Long vendorId, String status, LocalDateTime from, LocalDateTime to, String keyword) {
+        // ✅ Sử dụng truy vấn tổng hợp hỗ trợ lọc
+        List<Order> orders = orderRepository.searchVendorOrders(vendorId, emptyToNull(status), from, to, emptyToNull(keyword));
 
-        // ✅ Gọi repository JPQL thay vì method cũ
-        if (status == null || status.isBlank()) {
-            orders = orderRepository.findOrdersByVendorId(vendorId);
-        } else {
-            orders = orderRepository.findOrdersByVendorIdAndStatus(vendorId, status);
-        }
+
 
         // ✅ Map sang DTO
         return orders.stream()
@@ -922,6 +853,9 @@ public class OrderService {
                 .toList();
     }
 
+    private String emptyToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s;
+    }
 
     @Transactional
     public void confirmOrderByVendor(Long orderId, Long vendorId) {
@@ -1016,6 +950,48 @@ public class OrderService {
                 order.getId()
         ));
     }
+    @Transactional(readOnly = true)
+    public Order findOrderById(Long id) {
+        return orderRepository.findById(id).orElse(null);
+    }
 
+    // Helpers
+    private String generateOrderCode() {
+        String ymd = java.time.LocalDate.now().toString().replaceAll("-", "");
+        String rand = String.valueOf((int) (Math.random() * 90000) + 10000);
+        return "ALO-" + ymd + "-" + rand;
+    }
+
+    private String normalizePaymentMethod(String pm) {
+        if (pm == null) return PaymentMethod.COD.name();
+        try {
+            return PaymentMethod.valueOf(pm.toUpperCase()).name();
+        } catch (Exception e) {
+            return PaymentMethod.COD.name();
+        }
+    }
+    @Async
+    protected void sendAsyncNotifications(Long userId, Order order) {
+        try {
+            notificationService.create(
+                    userId,
+                    "ORDER",
+                    "Cập nhật đơn hàng",
+                    "Đơn hàng #" + order.getCode() + " hiện trạng thái: " + order.getStatus(),
+                    "Order",
+                    order.getId()
+            );
+        } catch (Exception ignore) {}
+        try {
+            if (OrderStatus.PENDING.name().equals(order.getStatus())) {
+                var items = orderItemRepository.findByOrderId(order.getId());
+                emailService.sendOrderConfirmationEmail(userId, order, items);
+            }
+        } catch (Exception ignore) {}
+    }
+
+    private void safe(Runnable r) {
+        try { r.run(); } catch (Exception ignored) {}
+    }
 
 }

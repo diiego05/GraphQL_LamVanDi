@@ -616,8 +616,67 @@ const ChatWidget = {
       const totalAmount = order.total
         ? order.total.toLocaleString('vi-VN')
         : '0';
-      const deliveryAddress = order.deliveryAddress || order.branchName || 'Đang cập nhật';
-      const paymentMethod = order.paymentMethod === 'CASH' ? '💵 Tiền mặt' : '💳 Chuyển khoản';
+		let deliveryAddress = null;
+		      const addrCandidates = [
+		        order.deliveryAddress,
+		        order.deliveryAddressLine,
+		        order.address,
+		        order.addressFull,
+		        order.shippingAddress,
+		        order.addressDetail,
+		        order.receiverAddress,
+		        order.branchName
+		      ];
+
+		      for (const a of addrCandidates) {
+		        if (!a) continue;
+		        if (typeof a === 'string' && a.trim()) { deliveryAddress = a.trim(); break; }
+		        // sometimes backend returns an object for address
+		        if (typeof a === 'object') {
+		          const parts = [];
+		          if (a.street) parts.push(a.street);
+		          if (a.ward) parts.push(a.ward);
+		          if (a.district) parts.push(a.district);
+		          if (a.city) parts.push(a.city);
+		          if (a.fullAddress) parts.unshift(a.fullAddress); // prefer fullAddress if present
+		          const composed = parts.filter(Boolean).join(', ').trim();
+		          if (composed) { deliveryAddress = composed; break; }
+		        }
+		      }
+
+		      if (!deliveryAddress) {
+		        // Last attempt: try to build from address object under order.addressObject or order.receiver
+		        const obj = order.addressObject || order.receiver || null;
+		        if (obj && typeof obj === 'object') {
+		          const parts = [obj.street || obj.addressLine, obj.ward, obj.district, obj.city].filter(Boolean);
+		          if (parts.length) deliveryAddress = parts.join(', ');
+		        }
+		      }
+
+		      if (!deliveryAddress) deliveryAddress = 'Đang cập nhật';
+	  const rawMethodLabel = order.paymentMethodLabel || order.paymentMethodName || order.paymentMethodDisplay;
+	        let paymentMethod;
+	        if (rawMethodLabel && typeof rawMethodLabel === 'string' && rawMethodLabel.trim()) {
+	          // Use the human-friendly label returned by backend (keeps translations/formatting)
+	          paymentMethod = rawMethodLabel;
+	        } else {
+	          // Normalize payment method codes and map to friendly labels as a fallback
+	          const pmCode = (order.paymentMethod || '').toString().trim().toUpperCase();
+	          if (pmCode === 'CASH' || pmCode === 'COD' || pmCode === 'PAY_ON_DELIVERY' || pmCode === 'PAY_ON_RECEIPT') {
+	            // Treat cash / cash-on-delivery variants as payment on delivery
+	            paymentMethod = '💵 Thanh toán khi nhận hàng';
+	          } else if (pmCode === 'TRANSFER' || pmCode === 'BANK_TRANSFER' || pmCode === 'BANK' || pmCode === 'CARD') {
+	            paymentMethod = '💳 Chuyển khoản';
+	          } else if (pmCode === 'ONLINE' || pmCode === 'VNPAY' || pmCode === 'MOMO' || pmCode === 'PAYMENT_GATEWAY') {
+	            paymentMethod = '💳 Thanh toán trực tuyến';
+	          } else if (!pmCode) {
+	            paymentMethod = 'Không xác định';
+	          } else {
+	            // Fallback: show raw code but log for debugging
+	            console.warn('Unknown paymentMethod code from API:', order.paymentMethod);
+	            paymentMethod = pmCode;
+	          }
+	        }
 
       return `
         <div class="order-card">
@@ -650,12 +709,7 @@ const ChatWidget = {
 
     container.insertAdjacentHTML('beforeend', orderMessage);
     this.scrollToBottom(true);
-    // Notify admin/server so the orders reply also appears in admin chat
-    try {
-      await this.sendSystemNotification(`Người dùng đã xem ${orders.length} đơn hàng (chưa hoàn thành).`);
-    } catch (err) {
-      console.warn('Không thể gửi thông báo đơn hàng cho server', err);
-    }
+
   },
 
   // ✅ GỬI TIN NHẮN TỰ ĐỘNG (CHỈ 1 LẦN)

@@ -51,7 +51,7 @@ public class UserService {
 
     @Transactional // Đảm bảo tất cả các thao tác DB thành công hoặc thất bại cùng nhau
     public void save(User userFromForm, MultipartFile avatarFile,
-                     String addressLine1, String addressCity, String addressDistrict, String addressWard) {
+                     String addressLine1, String addressCity, String addressWard) {
 
         User userInDb;
         // Kiểm tra là Sửa hay Thêm mới
@@ -94,7 +94,6 @@ public class UserService {
             newAddress.setPhone(savedUser.getPhone());
             newAddress.setLine1(addressLine1);
             newAddress.setCity(addressCity);
-            newAddress.setDistrict(addressDistrict);
             newAddress.setWard(addressWard);
             newAddress.setDefault(true); // Tạm thời gán địa chỉ đầu tiên là mặc định
 

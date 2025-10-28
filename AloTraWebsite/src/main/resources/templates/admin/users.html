@@ -87,6 +87,8 @@
 								<a th:href="@{/admin/users/delete/{id}(id=${user.id})}"
 								   class="btn btn-danger btn-sm"
 								   onclick="return confirm('Bạn có chắc chắn muốn xóa?')">Xóa</a>
+								<a th:href="@{/admin/chat(userId=${user.id})}"
+											  class="btn btn-secondary btn-sm ms-1">Chat</a>
 							</td>
 						</tr>
 						<tr th:if="${#lists.isEmpty(userList)}">
