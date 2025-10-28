@@ -41,6 +41,13 @@ public class CategoryService {
     public void save(Category category) {
         // Tự động tạo và gán slug từ tên trước khi lưu
         category.setSlug(generateSlug(category.getName()));
+        if (category.getParent() != null && category.getParent().getId() != null) {
+            Category parent = categoryRepository.findById(category.getParent().getId())
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục cha"));
+            category.setParent(parent);
+        } else {
+            category.setParent(null);
+        }
         categoryRepository.save(category);
     }
 

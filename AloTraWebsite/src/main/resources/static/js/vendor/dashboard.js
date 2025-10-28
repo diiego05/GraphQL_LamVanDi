@@ -8,7 +8,16 @@ const DEFAULT_TO = "2030-12-31";
 // 🔹 Biến giữ instance chart để tránh vẽ chồng
 let revenueChartInstance = null;
 let orderStatusChartInstance = null;
-
+const STATUS_MAP = {
+    PENDING: "Chờ xác nhận",
+    CONFIRMED: "Đã xác nhận",
+    WAITING_FOR_PICKUP: "Chờ lấy hàng",
+    SHIPPING: "Đang giao",
+    COMPLETED: "Hoàn thành",
+    CANCELED: "Đã hủy",
+    CANCELLED: "Đã hủy",
+    DELIVERED: "Đã giao"
+};
 document.addEventListener("DOMContentLoaded", async () => {
     showLoadingState(true);
     try {
@@ -154,7 +163,7 @@ async function loadOrderStatusChart() {
             return;
         }
 
-        const labels = data.map(item => item.status);
+        const labels = data.map(item => STATUS_MAP[item.status] || item.status);
         const counts = data.map(item => item.count);
 
         if (orderStatusChartInstance) orderStatusChartInstance.destroy();
@@ -165,12 +174,19 @@ async function loadOrderStatusChart() {
                 labels,
                 datasets: [{
                     data: counts,
-                    backgroundColor: ["#28a745", "#ffc107", "#0dcaf0", "#dc3545", "#6c757d"]
+                    backgroundColor: ["#ffc107", "#0d6efd", "#0dcaf0", "#17a2b8", "#28a745", "#dc3545"]
                 }]
             },
             options: {
                 responsive: true,
-                plugins: { legend: { position: "bottom" } },
+				plugins: {
+				                   legend: { position: "bottom" },
+				                   tooltip: {
+				                       callbacks: {
+				                           label: ctx => `${ctx.label}: ${ctx.parsed}`
+				                       }
+				                   }
+				               },
                 cutout: "70%"
             }
         });

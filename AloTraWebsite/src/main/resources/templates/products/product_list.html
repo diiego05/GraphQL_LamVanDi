@@ -84,10 +84,12 @@
         </div>
 
         <!-- 📦 Danh sách sản phẩm -->
-        <div id="product-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <div id="product-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4  pt-4">
             <!-- Sản phẩm sẽ được render bằng JavaScript -->
         </div>
-
+<nav class="mt-4">
+  <ul id="productPagination" class="pagination justify-content-center"></ul>
+</nav>
         <!-- Loading -->
         <div id="loading" class="text-center py-5 d-none">
             <div class="spinner-border text-success" role="status">
@@ -113,6 +115,8 @@ $(document).ready(function () {
 
     let allProducts = [];
     let filteredProducts = [];
+    let currentPage = 1;
+    const rowsPerPage = 8;
 
     // ✅ Đọc URL params để lọc theo category từ MegaMenu
     const urlParams = new URLSearchParams(window.location.search);
@@ -184,7 +188,7 @@ $(document).ready(function () {
         }
     }
 
-    // ================= APPLY FILTERS =================
+    // ================= FILTER & SORT =================
     function applyFiltersAndSort() {
         const searchTerm = $("#searchInput").val().toLowerCase().trim();
         const categoryId = $("#categoryFilter").val();
@@ -199,24 +203,15 @@ $(document).ready(function () {
 
         // Sort
         switch (sortBy) {
-            case "name":
-                filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-                break;
-            case "name_desc":
-                filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-                break;
-            case "price":
-                filteredProducts.sort((a, b) => (a.lowestPrice || 0) - (b.lowestPrice || 0));
-                break;
-            case "price_desc":
-                filteredProducts.sort((a, b) => (b.lowestPrice || 0) - (a.lowestPrice || 0));
-                break;
-            case "newest":
-                filteredProducts.sort((a, b) => b.id - a.id);
-                break;
+        case "name": filteredProducts.sort((a, b) => a.name.localeCompare(b.name)); break;
+        case "name_desc": filteredProducts.sort((a, b) => b.name.localeCompare(a.name)); break;
+        case "price": filteredProducts.sort((a, b) => (a.lowestPrice || 0) - (b.lowestPrice || 0)); break;
+        case "price_desc": filteredProducts.sort((a, b) => (b.lowestPrice || 0) - (a.lowestPrice || 0)); break;
+        case "newest": filteredProducts.sort((a, b) => b.id - a.id); break;
         }
-
+        currentPage = 1;
         renderProducts();
+        renderPagination();
     }
 
     // ================= RENDER PRODUCTS =================
@@ -232,7 +227,11 @@ $(document).ready(function () {
 
         $("#emptyState").addClass("d-none");
 
-        filteredProducts.forEach(p => {
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const pageData = filteredProducts.slice(start, end);
+
+        pageData.forEach(p => {
             const originalPrice = p.originalPrice ? new Intl.NumberFormat('vi-VN').format(p.originalPrice) + " ₫" : "";
             const discountedPrice = p.discountedPrice ? new Intl.NumberFormat('vi-VN').format(p.discountedPrice) + " ₫" : "";
             const img = p.imageUrl || '/alotra-website/images/placeholder.png';
@@ -271,7 +270,68 @@ $(document).ready(function () {
             grid.append(card);
         });
     }
+    // ================= RENDER PAGINATION =================
+    function renderPagination() {
+        const pagination = $("#productPagination");
+        pagination.empty();
 
+        const totalPages = Math.ceil(filteredProducts.length / rowsPerPage);
+        if (totalPages <= 1) return;
+
+        function createPageItem(label, disabled, active, onClick) {
+            const li = $("<li>").addClass("page-item");
+            if (disabled) li.addClass("disabled");
+            if (active) li.addClass("active");
+            const btn = $("<button>")
+                .addClass("page-link")
+                .text(label)
+                .on("click", function (e) {
+                    e.preventDefault();
+                    if (!disabled) onClick();
+                });
+            li.append(btn);
+            return li;
+        }
+
+        pagination.append(createPageItem("«", currentPage === 1, false, () => {
+            currentPage--;
+            renderProducts();
+            renderPagination();
+        }));
+
+        const maxButtons = 5;
+        let start = Math.max(1, currentPage - 2);
+        let end = Math.min(totalPages, start + maxButtons - 1);
+        if (end - start < maxButtons - 1) start = Math.max(1, end - maxButtons + 1);
+
+        if (start > 1) {
+            pagination.append(createPageItem(1, false, currentPage === 1, () => { currentPage = 1; renderProducts(); renderPagination(); }));
+            if (start > 2) pagination.append(createPageItem("...", true, false, () => {}));
+        }
+
+        for (let i = start; i <= end; i++) {
+            pagination.append(createPageItem(i, false, i === currentPage, () => {
+                currentPage = i;
+                renderProducts();
+                renderPagination();
+            }));
+        }
+
+        if (end < totalPages) {
+            if (end < totalPages - 1) pagination.append(createPageItem("...", true, false, () => {}));
+            pagination.append(createPageItem(totalPages, false, currentPage === totalPages, () => {
+                currentPage = totalPages;
+                renderProducts();
+                renderPagination();
+            }));
+        }
+
+        pagination.append(createPageItem("»", currentPage === totalPages, false, () => {
+            currentPage++;
+            renderProducts();
+            renderPagination();
+        }));
+    }
     // ================= EVENT HANDLERS =================
     $("#searchInput").on("input", debounce(applyFiltersAndSort, 300));
     $("#categoryFilter, #sortBy").on("change", applyFiltersAndSort);
@@ -353,10 +413,7 @@ $(document).ready(function () {
 
     // ================= INIT =================
     // ✅ Load categories trước để có thể auto-select từ URL
-    loadCategories().then(() => {
-        // Sau đó load products và apply filter
-        loadProducts();
-    });
+    loadCategories().then(() => loadProducts());
 });
 </script>
 </th:block>

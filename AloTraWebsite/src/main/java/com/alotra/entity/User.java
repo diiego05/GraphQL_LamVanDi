@@ -9,7 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import com.alotra.validator.StrongPassword;
-
+import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -51,6 +51,8 @@ public class User implements UserDetails {
 
     @Column(name = "DateOfBirth")
     private LocalDate dateOfBirth;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
 
     @Column(name = "IdCardNumber", unique = true)
     private String idCardNumber;

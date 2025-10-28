@@ -96,7 +96,9 @@ function renderCheckoutItems() {
 	const list = document.getElementById("checkout-item-list");
 	list.innerHTML = cartItems.map(it => {
 		const toppingHtml = it.toppings?.length
-			? `<div class="small text-muted">Topping: ${it.toppings.map(t => `${fmt(t.price)}`).join(", ")}</div>`
+		? `<div class="small text-muted">
+		                   Topping: ${it.toppings.map(t => `${t.name} (${fmt(t.price)})`).join(", ")}
+		               </div>`
 			: "";
 		const noteHtml = it.note ? `<div class="small text-info">Ghi chú: ${it.note}</div>` : "";
 		return `

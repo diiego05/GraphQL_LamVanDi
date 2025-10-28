@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.util.StringUtils;
-
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
 import com.alotra.entity.Address;
 import com.alotra.entity.Branch;
 import com.alotra.entity.Category;
@@ -141,10 +142,10 @@ public class AdminController {
 	        model.addAttribute("user", user);
 
 	        Address defaultAddress = user.getAddresses()
-                    .stream()
-                    .filter(Address::isDefault)  // ✅ đúng getter của boolean
-                    .findFirst()
-                    .orElse(null);
+	        		.stream()
+	                .filter(Address::isDefault)
+	                .findFirst()
+	                .orElse(null);
 
 	        model.addAttribute("defaultAddress", defaultAddress);
 
@@ -160,25 +161,60 @@ public class AdminController {
 	 // Vị trí: trong file com.alotra.controller.AdminController.java
 
 	    @PostMapping("/users/save")
-	    public String saveUser(@Valid @ModelAttribute("user") User user,
-	                           BindingResult bindingResult,
-	                           @RequestParam("avatarFile") MultipartFile avatarFile,
-	                           @RequestParam(required = false) String addressLine1,
-	                           @RequestParam(required = false) String addressCity,
-	                           @RequestParam(required = false) String addressWard,
-	                           Model model, RedirectAttributes redirectAttributes) {
+	    public String saveUser(
+	            @Valid @ModelAttribute("user") User user,
+	            BindingResult bindingResult,
+	            @RequestParam("avatarFile") MultipartFile avatarFile,
+	            @RequestParam(required = false) String addressLine1,
+	            @RequestParam(required = false) String addressCity,
+	            @RequestParam(required = false) String addressWard,
+	            Model model,
+	            RedirectAttributes redirectAttributes) {
+
+	        System.out.println("🟢 [DEBUG] BẮT ĐẦU LƯU NGƯỜI DÙNG");
+	        System.out.println("👉 ID: " + user.getId());
+	        System.out.println("👉 Họ tên: " + user.getFullName());
+	        System.out.println("👉 Email: " + user.getEmail());
+	        System.out.println("👉 SĐT: " + user.getPhone());
+	        System.out.println("👉 CCCD: " + user.getIdCardNumber());
+	        System.out.println("👉 Giới tính: " + user.getGender());
+	        System.out.println("👉 Vai trò ID: " + (user.getRole() != null ? user.getRole().getId() : "null"));
+	        System.out.println("👉 Trạng thái: " + user.getStatus());
+	        System.out.println("👉 Raw Password: " + user.getRawPassword());
+	        System.out.println("👉 Địa chỉ nhập: " + addressLine1 + " - " + addressWard + " - " + addressCity);
 
 	        // Yêu cầu mật khẩu khi tạo mới
 	        if (user.getId() == null && !StringUtils.hasText(user.getRawPassword())) {
 	            bindingResult.rejectValue("rawPassword", "error.user", "Mật khẩu là bắt buộc khi tạo mới");
 	        }
+	        if (user.getId() != null && !StringUtils.hasText(user.getRawPassword())) {
+	            System.out.println("🧹 [DEBUG] Bỏ qua lỗi mật khẩu khi chỉnh sửa người dùng");
 
+	            // Lọc tất cả lỗi trừ lỗi liên quan đến rawPassword
+	            List<FieldError> filteredErrors = bindingResult.getFieldErrors().stream()
+	                    .filter(err -> !err.getField().equals("rawPassword"))
+	                    .toList();
+
+	            // Tạo BindingResult mới
+	            BindingResult newResult = new BeanPropertyBindingResult(user, "user");
+	            for (FieldError e : filteredErrors) {
+	                newResult.addError(e);
+	            }
+
+	            model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "user", newResult);
+	            bindingResult = newResult;
+	        }
+
+	        // 🧭 Nếu còn lỗi sau xử lý => trả về form
 	        // Nếu có lỗi validation ban đầu, trả về ngay
 	        if (bindingResult.hasErrors()) {
+	        	 System.out.println("❌ [DEBUG] Có lỗi BindingResult:");
+		            bindingResult.getAllErrors().forEach(err -> System.out.println("   ⚠️ " + err));
 	            model.addAttribute("roleList", userService.findAllRoles());
 	            model.addAttribute("pageTitle", user.getId() == null ? "Thêm Mới" : "Chỉnh Sửa");
 	            model.addAttribute("parentPageTitle", "Quản lý Người dùng");
 	            model.addAttribute("parentPageUrl", "/admin/users");
+	            model.addAttribute("error", "Vui lòng kiểm tra lại các trường bị lỗi.");
 	            return "admin/user-form";
 	        }
 
@@ -188,14 +224,16 @@ public class AdminController {
 
 	        } catch (DataIntegrityViolationException e) {
 	            // --- PHẦN XỬ LÝ LỖI TRÙNG LẶP ---
+	        	System.out.println("❌ [DEBUG] DataIntegrityViolationException: " + e.getMessage());
+	            e.printStackTrace();
 	            String errorMessage = e.getMostSpecificCause().getMessage();
 
 	            // Kiểm tra xem lỗi là do email, phone hay cccd
-	            if (errorMessage.contains("UQ__Users__A9D105342503B089") || errorMessage.toLowerCase().contains("email")) {
+	            if (errorMessage.toLowerCase().contains("email")) {
 	                bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
-	            } else if (errorMessage.contains("UQ__Users__5C7E359EB190CE36") || errorMessage.toLowerCase().contains("phone")) {
+	            } else if (errorMessage.toLowerCase().contains("phone")) {
 	                bindingResult.rejectValue("phone", "error.user", "Số điện thoại này đã được sử dụng.");
-	            } else if (errorMessage.contains("UQ__Users__713A7B91E8BBD828") || errorMessage.toLowerCase().contains("idcardnumber")) {
+	            } else if (errorMessage.toLowerCase().contains("idcardnumber")) {
 	                 bindingResult.rejectValue("idCardNumber", "error.user", "Số CCCD này đã được sử dụng.");
 	            } else {
 	                // Lỗi trùng lặp chung
@@ -208,6 +246,10 @@ public class AdminController {
 	            model.addAttribute("parentPageTitle", "Quản lý Người dùng");
 	            model.addAttribute("parentPageUrl", "/admin/users");
 	            return "admin/user-form";
+	        } catch (Exception e) {
+	            System.out.println("❌ [DEBUG] Lỗi không xác định khi lưu user: " + e.getMessage());
+	            e.printStackTrace();
+	            redirectAttributes.addFlashAttribute("error", "❌ Lỗi khi lưu người dùng: " + e.getMessage());
 	        }
 
 	        return "redirect:/admin/users";

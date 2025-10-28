@@ -3,11 +3,15 @@ import { apiFetch } from '/alotra-website/js/auth-helper.js';
 /* ======================= ⚙️ CONFIG ======================= */
 const ordersList=document.getElementById('ordersList');
 const filterButtons=document.querySelectorAll('[data-status]');
+const paginationContainer=document.getElementById('ordersPagination');
 let currentStatus='';
 let selectedRating=0;
 let currentReviewOrderItemId=null;
 let currentReviewProductId=null;
 let currentReviewId=null;
+let allOrders=[];
+let currentPage=1;
+const rowsPerPage=5;
 
 // Cloudinary
 const CLOUD_NAME='dmxxo6wgl';
@@ -87,26 +91,94 @@ filterButtons.forEach(btn=>{
 /* ======================= LOAD ĐƠN HÀNG ======================= */
 async function loadOrders(){
   ordersList.innerHTML=`<div class="text-center text-muted py-5">Đang tải dữ liệu...</div>`;
+  paginationContainer.innerHTML='';
   try{
     const res=await apiFetch(`/api/orders${currentStatus?`?status=${currentStatus}`:''}`);
     if(!res.ok)throw new Error(`orders ${res.status}`);
-    const orders=await res.json();
-    if(!orders||orders.length===0){
+	allOrders=await res.json();
+	   if(!allOrders||allOrders.length===0){
       ordersList.innerHTML=`<div class="text-center text-muted py-5">Không có đơn hàng</div>`;
       return;
     }
-    ordersList.innerHTML=orders.map(renderOrderCard).join('');
+	currentPage=1;
+	    renderOrdersPage();
+	    renderPagination();
   }catch(e){
     console.error('❌ Lỗi loadOrders:',e);
     ordersList.innerHTML=`<div class="text-center text-danger py-5">Lỗi tải đơn hàng</div>`;
   }
 }
+/* ======================= PHÂN TRANG ======================= */
+function renderOrdersPage(){
+  const start=(currentPage-1)*rowsPerPage;
+  const end=start+rowsPerPage;
+  const pageData=allOrders.slice(start,end);
+  ordersList.innerHTML=pageData.map(renderOrderCard).join('');
+}
+
+function renderPagination(){
+  paginationContainer.innerHTML='';
+  const totalPages=Math.ceil(allOrders.length/rowsPerPage);
+  if(totalPages<=1)return;
+
+  const makeItem=(label,disabled,active,onClick)=>{
+    const li=document.createElement('li');
+    li.className=`page-item ${disabled?'disabled':''} ${active?'active':''}`;
+    const btn=document.createElement('button');
+    btn.className='page-link';
+    btn.textContent=label;
+    btn.addEventListener('click',e=>{
+      e.preventDefault();
+      if(!disabled)onClick();
+    });
+    li.appendChild(btn);
+    return li;
+  };
+
+  paginationContainer.appendChild(makeItem('«',currentPage===1,false,()=>{
+    currentPage--;
+    renderOrdersPage();
+    renderPagination();
+  }));
+
+  const maxButtons=5;
+  let start=Math.max(1,currentPage-2);
+  let end=Math.min(totalPages,start+maxButtons-1);
+  if(end-start<maxButtons-1)start=Math.max(1,end-maxButtons+1);
+
+  if(start>1){
+    paginationContainer.appendChild(makeItem('1',false,currentPage===1,()=>{currentPage=1;renderOrdersPage();renderPagination();}));
+    if(start>2)paginationContainer.appendChild(makeItem('...',true,false,()=>{}));
+  }
+
+  for(let i=start;i<=end;i++){
+    paginationContainer.appendChild(makeItem(i,false,i===currentPage,()=>{
+      currentPage=i;
+      renderOrdersPage();
+      renderPagination();
+    }));
+  }
+
+  if(end<totalPages){
+    if(end<totalPages-1)paginationContainer.appendChild(makeItem('...',true,false,()=>{}));
+    paginationContainer.appendChild(makeItem(totalPages,false,currentPage===totalPages,()=>{
+      currentPage=totalPages;
+      renderOrdersPage();
+      renderPagination();
+    }));
+  }
+
+  paginationContainer.appendChild(makeItem('»',currentPage===totalPages,false,()=>{
+    currentPage++;
+    renderOrdersPage();
+    renderPagination();
+  }));
+}
+
 /* ======================= HIỂN THỊ CARD ĐƠN ======================= */
 function canShowPayButton(o){
   const paymentStatus = o.payment?.status || o.paymentStatus || null;
-  return o.status === 'PENDING'
-      && o.paymentMethod === 'BANK'
-      && paymentStatus !== 'SUCCESS';  // ✅ ẩn nút nếu đã thanh toán thành công
+   return o.status === 'PENDING' && o.paymentMethod === 'BANK' && paymentStatus !== 'SUCCESS';
 }
 
 
@@ -159,14 +231,12 @@ function renderOrderCard(o){
   </div>`;
 }
 
-/* ======================= THANH TOÁN ======================= */
+
 /* ======================= THANH TOÁN ======================= */
 window.redirectToPayment = async function (orderId) {
   try {
     // Gọi API tạo link thanh toán VNPay cho đơn hàng này
-    const res = await fetch(`/alotra-website/api/payment/vnpay/create?orderId=${orderId}`, {
-      method: "POST"
-    });
+   const res = await fetch(`/alotra-website/api/payment/vnpay/create?orderId=${orderId}`, { method: "POST" });
 
     if (!res.ok) throw new Error("Không thể tạo link thanh toán VNPay");
 
